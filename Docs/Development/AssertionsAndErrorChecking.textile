@@ -1,0 +1,98 @@
+h1. Assertions and error checking
+
+h2. The Logger
+
+h2. MainBoard_Logger
+
+The ASSERT macro is defined in _MainBoard_Logger.h_ as:
+
+bc. 
+#define ASSERT(expr) \
+    if (expr) \
+        {} \
+    else \
+        assertionFailed(FileID, __LINE__)
+
+Also, in the _MainBoard_Logger.h_ file, a macro is defined to ensure that any file can call ASSERT with a unique file ID.
+The definition is:
+
+bc. 
+#define FILEID(id) \
+	const uint8_t FileID = id; \
+    void AssertFileID##id(void) {}
+
+*FileID* is used by *ASSERT* when calling the *assertionFailed* function.
+The *AssertFileID##id* function ensure that each file will have a unique ID. If two files are using the same ID the linker will generate an error.
+
+The definition of the _assertionFailed_ function, located in _MainBoard_Logger.cpp_ is:
+
+bc. 
+void assertionFailed(const uint8_t FileID, uint16_t assertLine)
+{
+	hwLogger.AddEntry(FileID, 0, assertLine);
+}
+
+so every failed assertion will record an event with code 0.
+
+h2. Generic .cpp source files
+
+To use the *ASSERT* macro or *PAx5::hwLogger* define the file ID at the top of  _.cpp_ file and the specific log codes, if any.
+
+bc. 
+FILEID(unique_8bit_ID)
+#define LOG_CODE_onething     1 // data = ...
+#define LOG_CODE_anotherthing 2 // data = ...
+
+To use *ASSERT* just call it.
+To use *hwLogger* call it like @hwLogger.AddEntry(FileID, LOG_CODE_..., specific_16bit_data);@
+
+h3. References
+
+The *ASSERT* macro and unique file ID usage was adapted from:  
+"How to Define Your Own assert() Macro for Embedded Systems":http://barrgroup.com/Embedded-Systems/How-To/Define-Assert-Macro
+
+h2. Log codes
+
+h3. FileID = 1 MainBoard
+
+*1* LOG_CODE_START, @data = (uint16_T)(RCC->CSR >> 24)@
+*2* LOG_CODE_CLOCK, data:
+* 1 = HSI timeout
+* 2 = PLL timeout
+* 3 = clock switching on PLL timeout
+
+h3. FileID = 5 cpu_SPI1
+
+*1* LOG_CODE_SCW, transmission failed in SendCommandAndWait function, @data = (cmd << 8 | spiSlave)@
+*2* LOG_CODE_SCPW, transmission failed in SendCmdPlusAndWait function, @data = (cmd << 8 | spiSlave)@
+*3* LOG_CODE_SBW, transmission failed in SendBufferAndWait function, @data = spiSlave@
+*4* LOG_CODE_IntHandler, unhandled interrupt case, @data = ((DMA1->ISR >> 4) << 8 | spiSlave)@
+
+h3. FileID = 6 cpu_I2C
+
+*1* LOG_CODE_RTimeout, read timeout, @data = slaveAddress@
+*2* LOG_CODE_WTimeout, write timeout, @data = slaveAddress@
+*3* LOG_CODE_IntHandler, unhandled interrupt case, @data = (uint16_t)(I2C1->ISR)@ at the entry of the interrupt handler
+
+h3. FileID = 7 cpu_USART1
+
+*1* LOG_CODE_CfgTimeout, configuration failed, data unused
+*2* LOG_CODE_UB_Overflow, overflow detected, data unused
+*3* LOG_CODE_IntHandler, unhandled interrupt case, @data = (uint16_t)USART1->ISR@
+
+h3. FileID = 8 cpu_MemoryEEPROM
+
+*1* LOG_CODE_Unlock, failed to unlock EEPROM, data unused
+*2* LOG_CODE_WriteUA, write error, @data = userAddress@
+*3* LOG_CODE_WriteSR, recorded after LOG_CODE_WriteUA, @data = (uint16_t)(FLASH->SR >> 2)@
+
+h3. FileID = 9 cpu_MemoryFLASH
+
+*1* LOG_CODE_Unlock, failed to unlock FLASH, data:
+* 1 = EEPROM unlock failed
+* 2 = FLASH unlock failed
+* 3 = Option bytes unlock failed
+*2* LOG_CODE_EraseUA, page erase failed, @data = page address@
+*3* LOG_CODE_EraseSR, recorded after LOG_CODE_EraseUA, @data = (uint16_t)(FLASH->SR >> 2)@
+*4* LOG_CODE_WriteUA, half-page write failed, @data = half-page address@
+*5* LOG_CODE_WriteSR, recorded after LOG_CODE_WriteUA, @data = (uint16_t)(FLASH->SR >> 2)@

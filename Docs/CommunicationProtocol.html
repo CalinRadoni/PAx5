@@ -1,0 +1,543 @@
+<?xml version='1.0' encoding='utf-8' ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	</head>
+	<body>
+		<h1 id="CommunicationProtocol">Communication Protocol</h1>
+		<h2 id="Layer1">Layer 1</h2>
+		<p>This is specific to RFM69</p>
+		<h2 id="Layer2">Layer 2</h2>
+		<p>Length and destination address are shared with 
+			<em>Layer 1</em>
+		</p>
+		<h2 id="Layer3">Layer 3</h2>
+		<h3 id="Channels">Channels</h3>
+		<table>
+			<tr>
+				<th>Channel ID</th>
+				<th>Channel Name</th>
+				<th>Number of bytes</th>
+				<th>Format</th>
+			</tr>
+			<tr>
+				<td>0x00</td>
+				<td>Firmware</td>
+				<td>4</td>
+				<td>high(1) low(1) build(2)</td>
+			</tr>
+			<tr>
+				<td>0x01</td>
+				<td>Power</td>
+				<td>2</td>
+				<td>see description</td>
+			</tr>
+			<tr>
+				<td style="background:#808080" colspan="4"></td>
+			</tr>
+			<tr>
+				<td>0x10</td>
+				<td>Contact</td>
+				<td>1</td>
+				<td>!=0 means ON</td>
+			</tr>
+			<tr>
+				<td>0x11</td>
+				<td>Switch</td>
+				<td>1</td>
+				<td>!=0 means ON</td>
+			</tr>
+			<tr>
+				<td>0x12</td>
+				<td>Dimmer</td>
+				<td>1</td>
+				<td>0 &#8211; 255</td>
+			</tr>
+			<tr>
+				<td>0x13</td>
+				<td>Blinds</td>
+				<td>1</td>
+				<td>
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x14</td>
+				<td>Color</td>
+				<td>4</td>
+				<td>info (
+					<em>n.d.</em>) + HSB
+				</td>
+			</tr>
+			<tr>
+				<td>0x15</td>
+				<td>DateTime</td>
+				<td colspan="2">
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td style="background:#808080" colspan="4"></td>
+			</tr>
+			<tr>
+				<td>0x20</td>
+				<td>Temperature</td>
+				<td>2</td>
+				<td>10 * temperature [~deg K], extract 2731 for deg.C</td>
+			</tr>
+			<tr>
+				<td>0x21</td>
+				<td>Humidity</td>
+				<td>2</td>
+				<td>10 * humidity [%]</td>
+			</tr>
+			<tr>
+				<td>0x22</td>
+				<td>Light</td>
+				<td>2</td>
+				<td>Lux</td>
+			</tr>
+			<tr>
+				<td>0x23</td>
+				<td>Light UV</td>
+				<td>2</td>
+				<td>value</td>
+			</tr>
+			<tr>
+				<td>0x24</td>
+				<td>Light IR</td>
+				<td>2</td>
+				<td>value</td>
+			</tr>
+			<tr>
+				<td>0x25</td>
+				<td>Wind speed</td>
+				<td>2</td>
+				<td>value</td>
+			</tr>
+			<tr>
+				<td>0x26</td>
+				<td>Wind direction</td>
+				<td>2</td>
+				<td>value</td>
+			</tr>
+			<tr>
+				<td>0x27</td>
+				<td>Rain</td>
+				<td>2</td>
+				<td>value</td>
+			</tr>
+			<tr>
+				<td>0x28</td>
+				<td>Water</td>
+				<td>1</td>
+				<td>
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x29</td>
+				<td colspan="3">
+					<em>reserved</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x2A</td>
+				<td>Gas &#8211; generic</td>
+				<td colspan="2">
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x2B</td>
+				<td>Gas &#8211; CO</td>
+				<td colspan="2">
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x2C</td>
+				<td>Gas &#8211; CO2</td>
+				<td colspan="2">
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x2D</td>
+				<td>Gas &#8211; CH4 (Methane)</td>
+				<td colspan="2">
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td style="background:#808080" colspan="4"></td>
+			</tr>
+			<tr>
+				<td>0x30</td>
+				<td>Alarm</td>
+				<td colspan="2">
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x31</td>
+				<td>Motion</td>
+				<td>1</td>
+				<td>
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x32</td>
+				<td>Smoke</td>
+				<td>1</td>
+				<td>
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td>0x33</td>
+				<td>Fire</td>
+				<td>1</td>
+				<td>
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td style="background:#808080" colspan="4"></td>
+			</tr>
+			<tr>
+				<td>0x40</td>
+				<td>Player</td>
+				<td colspan="2">
+					<em>n.d.</em>
+				</td>
+			</tr>
+			<tr>
+				<td style="background:#808080" colspan="4"></td>
+			</tr>
+			<tr>
+				<td>0xFC</td>
+				<td>Log &#8211; number of entries</td>
+				<td>1</td>
+				<td>value</td>
+			</tr>
+			<tr>
+				<td>0xFD</td>
+				<td>Log entry</td>
+				<td>5</td>
+				<td>entry number + log entry (4 bytes)</td>
+			</tr>
+			<tr>
+				<td>0xFE</td>
+				<td>extended code</td>
+				<td>
+					<em>n.d.</em>
+				</td>
+				<td>not implemented</td>
+			</tr>
+			<tr>
+				<td>0xFF</td>
+				<td>not-a-channel</td>
+				<td>0</td>
+				<td>usable as end of channels list</td>
+			</tr>
+		</table>
+		<p>
+			<strong>How about: IR, Door, Window, and other ?</strong>
+		</p>
+		<h4 id="Power">Power</h4>
+		<p>Byte 0:
+			<br/>- bit 7 = power type mains
+			<br/>- bit 6 = main present
+			<br/>- bit 5 = power type battery
+			<br/>- bit 4 = reserved 
+			<br/>- bit 3 = reserved
+			<br/>- bit 2 = reserved
+			<br/>- bit 1 = battery charging
+			<br/>- bit 0 = battery low
+			<br/>Byte 1: battery percent [0 &#8211; 100 %]
+		</p>
+		<h3 id="QSTATUS">Q_STATUS</h3>
+		<p>Gateway -&gt; Node. The node should replay with his status.</p>
+		<h3 id="ASTATUS">A_STATUS</h3>
+		<p>Node -&gt; Gateway.</p>
+		<p>Firmware version H [BYTE] | L [BYTE] | BuildNo [2 * BYTE]</p>
+		<p>power type [BYTE]      | power value [BYTE]
+			<br/>battery                | 10*voltage
+			<br/>rechargeable battery   | 10*voltage [+ 128 if charging]
+			<br/>mains                  | 0
+			<br/>mains present + backup | backup voltage: 10*voltage [+ 128 if charging]
+			<br/>mains missing + backup | backup voltage: 10*voltage [+ 128 if charging]
+		</p>
+		<p>Number of channels [BYTE]
+			<br/>N * channel type [N * BYTE]
+		</p>
+		<h3 id="QDATA">Q_DATA</h3>
+		<h3 id="ADATA">A_DATA</h3>
+		<p>number of samples [byte]
+			<br/>N * (
+			<br/>	channel id [byte]
+			<br/>	channel type [byte]
+			<br/>	channel data [specific number of bytes]
+			<br/>)
+		</p>
+		<h2 id="EclipseSmartHomeCompatibility">Eclipse SmartHome Compatibility</h2>
+		<h3 id="ItemTypes">Item Types</h3>
+		<p>Comparation with Eclipse SmartHome 
+			<a href="http://www.eclipse.org/smarthome/documentation/concepts/items.html">Items</a> :
+		</p>
+		<table>
+			<tr>
+				<th>PAx5</th>
+				<th>ESX</th>
+				<th>Item Name</th>
+				<th>Description</th>
+				<th>Command Types</th>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>Color</td>
+				<td>Color information (RGB)</td>
+				<td>OnOff, IncreaseDecrease, Percent, HSB</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>Contact</td>
+				<td>Item storing status of e.g. door/window contacts</td>
+				<td>OpenClose</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>DateTime</td>
+				<td>Stores date and time</td>
+				<td>-</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>Dimmer</td>
+				<td>Item carrying a percentage value for dimmers</td>
+				<td>OnOff, IncreaseDecrease, Percent</td>
+			</tr>
+			<tr>
+				<td>-</td>
+				<td>X</td>
+				<td>Group</td>
+				<td>Item to nest other items / collect them in groups</td>
+				<td>-</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>Number</td>
+				<td>Stores values in number format</td>
+				<td>Decimal</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>Player</td>
+				<td>Allows to control players (e.g. audio players)</td>
+				<td>PlayPause, NextPrevious, RewindFastforward</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>Rollershutter</td>
+				<td>Typically used for blinds</td>
+				<td>UpDown, StopMove, Percent</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>String</td>
+				<td>Stores texts</td>
+				<td>String</td>
+			</tr>
+			<tr>
+				<td>X</td>
+				<td>X</td>
+				<td>Switch</td>
+				<td>Typically used for lights (on/off)</td>
+				<td>OnOff</td>
+			</tr>
+		</table>
+		<h3 id="ChannelCategories">Channel Categories</h3>
+		<p>From 
+			<a href="https://www.eclipse.org/smarthome/documentation/development/bindings/thing-definition.html#channel-categories">Channel Categories</a> in 
+			<a href="https://www.eclipse.org/smarthome/documentation/development/bindings/thing-definition.html">Thing Definition</a>
+		</p>
+		<table>
+			<tr>
+				<td>Category</td>
+				<td>Accessible Mode</td>
+				<td>Item Type</td>
+			</tr>
+			<tr>
+				<td>Alarm</td>
+				<td>R, RW</td>
+				<td>Switch</td>
+			</tr>
+			<tr>
+				<td>Battery</td>
+				<td>R</td>
+				<td>Switch, Number</td>
+			</tr>
+			<tr>
+				<td>Blinds</td>
+				<td>RW</td>
+				<td>Rollershutter</td>
+			</tr>
+			<tr>
+				<td>ColorLight</td>
+				<td>RW</td>
+				<td>Color</td>
+			</tr>
+			<tr>
+				<td>Contact</td>
+				<td>R</td>
+				<td>Contact</td>
+			</tr>
+			<tr>
+				<td>DimmableLight</td>
+				<td>RW</td>
+				<td>Dimmer</td>
+			</tr>
+			<tr>
+				<td>CarbonDioxide</td>
+				<td>R</td>
+				<td>Switch, Number</td>
+			</tr>
+			<tr>
+				<td>Door</td>
+				<td>R, RW</td>
+				<td>Switch</td>
+			</tr>
+			<tr>
+				<td>Energy</td>
+				<td>R</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>Fan</td>
+				<td>RW</td>
+				<td>Switch, Number, String</td>
+			</tr>
+			<tr>
+				<td>Fire</td>
+				<td>R</td>
+				<td>Switch</td>
+			</tr>
+			<tr>
+				<td>Flow</td>
+				<td>R</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>GarageDoor</td>
+				<td>RW</td>
+				<td>String</td>
+			</tr>
+			<tr>
+				<td>Gas</td>
+				<td>R</td>
+				<td>Switch, Number</td>
+			</tr>
+			<tr>
+				<td>Humidity</td>
+				<td>R</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>Light</td>
+				<td>R, RW</td>
+				<td>Switch, Number</td>
+			</tr>
+			<tr>
+				<td>Motion</td>
+				<td>R</td>
+				<td>Switch</td>
+			</tr>
+			<tr>
+				<td>MoveControl</td>
+				<td>RW</td>
+				<td>String</td>
+			</tr>
+			<tr>
+				<td>Player</td>
+				<td>RW</td>
+				<td>Player</td>
+			</tr>
+			<tr>
+				<td>PowerOutlet</td>
+				<td>RW</td>
+				<td>Switch</td>
+			</tr>
+			<tr>
+				<td>Pressure</td>
+				<td>R</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>QualityOfService</td>
+				<td>R</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>Rain</td>
+				<td>R</td>
+				<td>Switch, Number</td>
+			</tr>
+			<tr>
+				<td>Recorder</td>
+				<td>RW</td>
+				<td>String</td>
+			</tr>
+			<tr>
+				<td>Smoke</td>
+				<td>R</td>
+				<td>Switch</td>
+			</tr>
+			<tr>
+				<td>SoundVolume</td>
+				<td>R, RW</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>Switch</td>
+				<td>RW</td>
+				<td>Switch</td>
+			</tr>
+			<tr>
+				<td>Temperature</td>
+				<td>R, RW</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>Water</td>
+				<td>R</td>
+				<td>Switch, Number</td>
+			</tr>
+			<tr>
+				<td>Wind</td>
+				<td>R</td>
+				<td>Number</td>
+			</tr>
+			<tr>
+				<td>Window</td>
+				<td>R, RW</td>
+				<td>String, Switch</td>
+			</tr>
+			<tr>
+				<td>Zoom</td>
+				<td>RW</td>
+				<td>String</td>
+			</tr>
+		</table>
+		<p>R=Read, RW=Read/Write</p>
+	</body>
+</html>

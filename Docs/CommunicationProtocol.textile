@@ -1,0 +1,156 @@
+h1. Communication Protocol
+
+h2. Layer 1
+
+This is specific to RFM69
+
+h2. Layer 2
+
+Length and destination address are shared with _Layer 1_
+
+h2. Layer 3
+
+h3. Channels
+
+|_. Channel ID |_. Channel Name |_. Number of bytes |_. Format |
+| 0x00 | Firmware | 4 | high(1) low(1) build(2) |
+| 0x01 | Power | 2 | see description |
+|\4{background:#808080}. |
+| 0x10 | Contact | 1 | !=0 means ON |
+| 0x11 | Switch | 1 | !=0 means ON |
+| 0x12 | Dimmer | 1 | 0 - 255 |
+| 0x13 | Blinds | 1 | _n.d._ |
+| 0x14 | Color | 4 | info (_n.d._) + HSB |
+| 0x15 | DateTime |\2. _n.d._ |
+|\4{background:#808080}. |
+| 0x20 | Temperature | 2 | 10 * temperature [~deg K], extract 2731 for deg.C |
+| 0x21 | Humidity | 2 | 10 * humidity [%] |
+| 0x22 | Light | 2 | Lux |
+| 0x23 | Light UV | 2 | value |
+| 0x24 | Light IR | 2 | value |
+| 0x25 | Wind speed | 2 | value |
+| 0x26 | Wind direction | 2 | value |
+| 0x27 | Rain | 2 | value |
+| 0x28 | Water | 1 | _n.d._ |
+| 0x29 |\3. _reserved_ |
+| 0x2A | Gas - generic |\2. _n.d._ |
+| 0x2B | Gas - CO |\2. _n.d._ |
+| 0x2C | Gas - CO2 |\2. _n.d._ |
+| 0x2D | Gas - CH4 (Methane) |\2. _n.d._ |
+|\4{background:#808080}. |
+| 0x30 | Alarm |\2. _n.d._ |
+| 0x31 | Motion | 1 | _n.d._ |
+| 0x32 | Smoke | 1 | _n.d._ |
+| 0x33 | Fire | 1 | _n.d._ |
+|\4{background:#808080}. |
+| 0x40 | Player |\2. _n.d._ |
+|\4{background:#808080}. |
+| 0xFC | Log - number of entries | 1 | value |
+| 0xFD | Log entry | 5 | entry number + log entry (4 bytes) |
+| 0xFE | extended code | _n.d._ | not implemented |
+| 0xFF | not-a-channel | 0 | usable as end of channels list | 
+
+*How about: IR, Door, Window, and other ?*
+
+h4. Power
+
+Byte 0:
+- bit 7 = power type mains
+- bit 6 = main present
+- bit 5 = power type battery
+- bit 4 = reserved 
+- bit 3 = reserved
+- bit 2 = reserved
+- bit 1 = battery charging
+- bit 0 = battery low
+Byte 1: battery percent [0 - 100 %]
+ 
+
+h3. Q_STATUS
+
+Gateway -> Node. The node should replay with his status.
+
+h3. A_STATUS
+
+Node -> Gateway.
+
+Firmware version H [BYTE] | L [BYTE] | BuildNo [2 * BYTE]
+
+power type [BYTE]      | power value [BYTE]
+battery                | 10*voltage
+rechargeable battery   | 10*voltage [+ 128 if charging]
+mains                  | 0
+mains present + backup | backup voltage: 10*voltage [+ 128 if charging]
+mains missing + backup | backup voltage: 10*voltage [+ 128 if charging]
+
+Number of channels [BYTE]
+N * channel type [N * BYTE]
+
+h3. Q_DATA
+
+h3. A_DATA
+
+number of samples [byte]
+N * (
+	channel id [byte]
+	channel type [byte]
+	channel data [specific number of bytes]
+)
+
+h2. Eclipse SmartHome Compatibility
+
+h3. Item Types
+
+Comparation with Eclipse SmartHome "Items":http://www.eclipse.org/smarthome/documentation/concepts/items.html :
+
+|_. PAx5 |_. ESX |_. Item Name |_. Description |_. Command Types |
+| X | X | Color | Color information (RGB) | OnOff, IncreaseDecrease, Percent, HSB |
+| X | X | Contact | Item storing status of e.g. door/window contacts | OpenClose |
+| X | X | DateTime | Stores date and time | - |
+| X | X | Dimmer | Item carrying a percentage value for dimmers | OnOff, IncreaseDecrease, Percent |
+| - | X | Group | Item to nest other items / collect them in groups | - |
+| X | X | Number | Stores values in number format | Decimal |
+| X | X | Player | Allows to control players (e.g. audio players) | PlayPause, NextPrevious, RewindFastforward |
+| X | X | Rollershutter | Typically used for blinds | UpDown, StopMove, Percent |
+| X | X | String | Stores texts | String |
+| X | X | Switch | Typically used for lights (on/off) | OnOff |
+
+h3. Channel Categories
+
+From "Channel Categories":https://www.eclipse.org/smarthome/documentation/development/bindings/thing-definition.html#channel-categories in "Thing Definition":https://www.eclipse.org/smarthome/documentation/development/bindings/thing-definition.html
+
+| Category | Accessible Mode | Item Type |
+| Alarm | R, RW | Switch |
+| Battery | R | Switch, Number |
+| Blinds | RW | Rollershutter |
+| ColorLight | RW | Color |
+| Contact | R | Contact |
+| DimmableLight | RW | Dimmer |
+| CarbonDioxide | R | Switch, Number |
+| Door | R, RW | Switch |
+| Energy | R | Number |
+| Fan | RW | Switch, Number, String |
+| Fire | R | Switch |
+| Flow | R | Number |
+| GarageDoor | RW | String |
+| Gas | R | Switch, Number |
+| Humidity | R | Number |
+| Light | R, RW | Switch, Number |
+| Motion | R | Switch |
+| MoveControl | RW | String |
+| Player | RW | Player |
+| PowerOutlet | RW | Switch |
+| Pressure | R | Number |
+| QualityOfService | R | Number |
+| Rain | R | Switch, Number |
+| Recorder | RW | String |
+| Smoke | R | Switch |
+| SoundVolume | R, RW | Number |
+| Switch | RW | Switch |
+| Temperature | R, RW | Number |
+| Water | R | Switch, Number |
+| Wind | R | Number |
+| Window | R, RW | String, Switch |
+| Zoom | RW | String |
+
+R=Read, RW=Read/Write

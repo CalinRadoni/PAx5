@@ -1,0 +1,24 @@
+# ignore everything in this folder ...
+/*
+# ... except relevant files ...
+!/.gitignore
+!/*.md
+# ... and relevant folders
+!/BaseBoard/
+!/EnvSensor/
+!/Small-Add-ons/
+
+# ignore KiCad backup files
+*.bak
+*.kicad_pcb-bak
+
+# ignore generated image files
+*.png
+*.svg
+
+# ignore archives
+*.7z
+*.zip
+
+# others
+Thumbs.db

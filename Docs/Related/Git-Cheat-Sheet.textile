@@ -1,0 +1,97 @@
+h1. Quick start
+
+h2. Start
+
+Clone an existing project:
+bc.
+$ git clone /path/to/repository                 # create a working copy of a local repository
+$ git clone username@host:/path/to/repository   # or of a remote repository
+
+or start with a new one:
+bc.
+$ cd project/
+$ git init                  # initializes the repository
+$ git add --all             # add those 'unknown' files
+$ git rm --cached <file>... # undo, in case you forgot .gitignore, and you do not want to start over by removing the .git directory
+$ git commit                # commit all changes, edit changelog entry
+
+h2. Simple operations
+
+*working directory* -> @add@ -> *index (staging area)* -> @commit@ -> *head*
+
+@git add <file>@ adds the file @<file>@ to the index. Wildcards are allowed.
+@git add *@ adds all files to the index
+@git commit -m "commit message"@ takes the files from the staging area and permanently store them in the Git directory
+
+@git diff@ to see the differences between working files and staged files
+@git diff --staged@ to see the differences between staged files and the last commit
+
+@git rm <file>@ remove the file from staging area *AND FROM YOUR WORKING DIRECTORY !*
+@git rm --cached <file>@ remove the file from staging area but *not* from your working directory
+
+@git mv <file1> <file2>@ to rename a file. This is like executing @mv <file1> <file2>; git rm <file1>; git add <file2@
+
+h3. Undoing
+
+@git commit --amend@ takes the staging area and use it for commit. This commit *replaces* previous commit.
+@git reset HEAD <file>@ unstages the staged @<file>@. The @<file>@ in working directory is *not ?* touched.
+
+h3. Inspect
+
+bc.
+git log
+git status
+git show-ref
+
+h3. Tagging
+
+It may be usefull to create tags for software releases.
+
+@git tag@ lists the tags is alphabetical order
+@git show <tagName>@ shosw info about the tag @<tagName>@
+
+Lightweight tags are just pointers to specific commits.
+@git tag "v1.2.3"@ creates a lightweight tag for current commit
+Annotated tags are stored like full objects in Git database.
+@git tag -a "v1.2.3" -m "Version 1.2.3"@ creates the annotated tag "v1.2.3" with the message "Version 1.2.3"
+
+*Tagging later*
+
+@git log --pretty=oneline@ to see the commits and their checksums
+@git tag -a 1.2.3 12345678AB@ creates the tag @1.2.3@ for the commit whose checksum starts with @12345678AB@
+
+h3. Branching
+
+@git checkout -b <branchX>@ creates the branch @<branchX>@ and switches to it
+@git checkout master@ switches to @master@ branch
+@git branch -d <branchX>@ deletes the branch @<branchX>@
+
+@git show-branch@
+@git show-branch -r@
+@git show-branch -a@
+
+@git diff <srcBranch> <dstBranch>@ shows differences between branches
+@git merge <branchX>@ merge changes from @<branchX>@ to current branch
+
+h3. Remoting
+
+@git remote -v@ shows configured remote servers
+@git remote show <remoteShortName>@ shows informations about the remote identified with @<remoteShortName>@
+@git remote add <shortName> <url>@ adds a remote server and sets a shortname to acces it easily
+
+@git push <repository> <branchName>@ pushes the branch @<branchName>@ to the repository identified by short name or URL
+
+@git fetch <repository> <remoteBranchName>@ fetches the specfied branch from specified repository
+@git diff <localBranch> <repositoryShortName>/<remoteBranchName>@ shows diffs between @<localBranch>@ and fetched files from <repositoryShortName>/<remoteBranchName>
+@git merge <repositoryShortName>/<remoteBranchName>@ merge fetched files from <repositoryShortName>/<remoteBranchName> to current branch
+
+*Use @fetch@, @diff@ and @merge@ instead of pull !*
+*Use @fetch@, @diff@ and @merge@ instead of pull !*
+*Use @fetch@, @diff@ and @merge@ instead of pull !*
+@git pull <repository> <remoteBranchName>@ pulls from specified repository the specified branch in current branch. Is it like a @git fetch@ followed by a @git merge@
+
+h1. Links
+
+"Git QuickStart":https://git.wiki.kernel.org/index.php/QuickStart
+"git - the simple guide":http://rogerdudler.github.io/git-guide/
+"Getting Started - Git Basics":https://git-scm.com/book/en/v2/Getting-Started-Git-Basics

@@ -1,0 +1,206 @@
+h1. Creating a new project based on PAx5_Base
+
+This document show the steps required to create a new project in *PAx5* workspace based on _PAx5_Base_.
+Assumptions:
+* MCU: *STM32L051K8* MCU _(FLASH: 64KB, RAM: 8KB)_
+* IDE: *Atollic TrueSTUDIO for ARM* version *7.0.0*
+
+h2. Create the new project
+
+To create a new project choose *File -> New -> C++ Project*
+
+*Step 1* C++ Project window
+
+* Fill Project name
+* Project type: *Executable -> Embedded C++ Project*
+* Toolchains: *Atollic ARM Tools*
+
+*Step 2* Hardware configuration
+
+* Device: *STM32L051K8*
+* Floating point: Software implementation
+* Code location: *FLASH*
+* Instruction set: Thumb2
+* Endianess: Little endian
+
+*Step 3* Software configuration
+
+Runtime library
+* Library: *Reduced C and C++*
+* Use tiny printf/sprintf/fprintf (small code size): *uncheck*
+* Generate system calls file (enable I/O redirection and OS integration): *uncheck*
+Optimization
+* Remove unused code (dead code removal): *check*
+* Remove unused data (dead data removal): *check*
+* Disable C++ runtime type information (RTTI): *check*
+* Disable C++ exception handling: *check*
+
+*Step 4* Debugger configuration
+
+* Debug Probe: *ST-LINK*
+
+*Step 5* Select configurations
+
+Select all
+
+h2. Post project creation steps
+
+*Step 1* Linker file
+
+Change the _stm32_flash.ld_ file by adding:
+
+bc. 
+. = ALIGN(4);
+*(.RamFunctions)   /* .RamFunctions sections */
+
+in *.data:* section. The section should look like this:
+
+bc.. .data : 
+{
+  . = ALIGN(4);
+  _sdata = .;        /* create a global symbol at data start */
+  *(.data)           /* .data sections */
+  *(.data*)          /* .data* sections */
+  
+  /* added by Calin Radoni for PAx5 RAM functions */
+  . = ALIGN(4);
+  *(.RamFunctions)   /* .RamFunctions sections */
+
+  . = ALIGN(4);
+  _edata = .;        /* define a global symbol at data end */
+} >RAM AT> FLASH
+p. 
+
+*Step 2* Drivers folder
+
+*TrueStudio 7.0.0* contains CMSIS version 1.0.1 but for PAx5 I have used version 1.2.0 downloaded from ST.
+Delete the _Drivers_ directory. We will use the one form PAx5_Base.
+
+h2. Project Settings
+
+In _Project Explorer_ right-click the project's name and select *Properties*
+
+*Step 1*
+
+To add a path as a *workspace path*, in *Add..* window:
+* click the *Workspace...* button
+* select desired path and click *OK*
+* make sure *Is a workspace path* is *checked* and click *OK*
+
+*A:* In *C/C++ General -> Paths and Symbols -> Includes* remove from all configurations (_Debug, Release_) and all languages (_GNU C, GNU C++ and S,s,asm_):
+* _Drivers/STM32L0xx_HAL_Driver/Inc_
+* _Drivers/CMSIS/Include_
+* _Drivers/CMSIS/Device/ST/STM32L0xx/Include_
+
+then click the *Add* button and add as *workspace path*:
+* _/PAx5_Base/Drivers/CMSIS/Include_
+* _/PAx5_Base/Drivers/CMSIS/Device/ST/STM32L0xx/Include_
+
+then click the *Apply* button.
+
+For GNU C++ also add as *workspace path*:
+* _/PAx5_Base/src/Board_
+* _/PAx5_Base/src/Comm_
+
+then click the *Apply* button.
+
+*B:* In *C/C++ General -> Paths and Symbols -> Symbols* remove USE_STDPERIPH_DRIVER from all configurations (_Debug, Release_) and all languages (_GNU C, GNU C++ and S,s,asm_) then click the *Apply* button.
+
+*C:* In *C/C++ General -> Paths and Symbols -> Library Paths* select *Debug* configuration, click the *Add* button and add as *workspace path* the _/PAx5_Base/Debug_ location.
+
+*D:* Repeat previous step for *Release* configuration but select _PAx5_Base/Release_ location.
+
+*E:* In *C/C++ General -> Paths and Symbols -> Library* for all configurations click the *Add* button an enter *PAx5_Base* .
+
+*Step 2*
+In *C/C++ Build -> Settings -> Tool Settings -> C++ Compiler -> Directories*:
+* click *Add* then *Workspace* and select *PAx5_Base/src/Board* directory
+* click *Add* then *Workspace* and select */PAx5_Base/src/Comm* directory
+and move them right below _../src_
+
+*Step 3* (optional)
+In *C/C++ Build -> Settings -> Build Steps* set pre-build and post-build steps.
+
+To have the build number automatically incremented, *Pre-build steps -> Command*
+
+bc. <path_to_BuildNumberInc>\BuildNumberInc.exe -v <path to project's version.h file> <name of define for build number>
+
+or
+
+bc. <path_to_BuildNumberInc>\BuildNumberInc.exe -c -v <path to project's version.h file> <name build number constant>
+
+To have more verbose size informations, *Post-build steps -> Command*
+
+bc. arm-atollic-eabi-size.exe --format=sysv -x ..\Release\<project name>.elf
+
+*Step 4* (optional)
+In *C/C++ Build -> Setting -> Tool Settings -> Other -> Output format*:
+* *check* Convert build output
+* select Intel Hex
+
+*Step 5* (optional)
+In *Project References* *check* _PAx5_Base_
+By doing this Rebuild should also rebuild the library. I have seen that it build default library configuration not the one needed for project (Ex. Project with Release and library with Debug).
+So, better NOT check this until a I find an answer ! 
+
+*Step 6*
+In *Task Repository* select Local
+
+h2. Run/debug configurations
+
+Build the project.
+
+Open *Debug Configurations* window (*Run -> Debug Configurations...*).
+Under *Embedded C/C++ Application* duplicate an existing configuration then:
+
+In *Main* tab:
+* set desired name
+* click *Browse...* button located on the right of project name and select this project
+* click *Search Project...* button and select the _elf_ file corresponding to this project
+* select *Disable auto build*
+
+In *Common* tab:
+* for Save As use *Local file*
+* for Display in favorites menu *check* Debug
+
+In *Startup Scripts* tab, *Target Software Startup Scripts* use one of the following scripts:
+
+*Download and reset target configuration*
+
+bc. set host-charset CP1252
+set target-charset CP1252
+monitor reset
+load		
+quit
+
+Standard *Download and debug* generated by *TrueStudio*
+
+bc.. # Set character encoding
+set host-charset CP1252
+set target-charset CP1252
+
+# Reset to known state
+monitor reset
+
+# Load the program executable
+load		
+
+# Reset the chip to get to a known state. Remove "monitor reset" command 
+#  if the code is not located at default address and does not run by reset. 
+monitor reset
+
+# Enable Debug connection in low power modes (DBGMCU->CR)
+set *0xE0042004 = (*0xE0042004) | 0x7
+
+# Set a breakpoint at main().
+tbreak main
+
+# Run to the breakpoint.
+continue
+p. 
+
+Click the *Apply* button to save the configuration.
+
+If there is no _debug_ drop-down button to select desired dubug configuration, customize current perspective
+( *Menu: Window -> Perspective -> Customize Perspective...* )
+In the *Tool Bar Visibility* tab expand the *Launch* item then uncheck and recheck the *Debug* subitem.

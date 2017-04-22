@@ -1,0 +1,23 @@
+h1. Install Atollic TrueSTUDIO.
+
+According to the official docs you can have more then one version installed.
+I allways use different directories for each version installed (ex.: @D:\Programs\TrueSTUDIO for ARM 7.1.0@)
+
+h1. Workspace configuration
+
+Let's say the full name of the @PAx5\SW@ directory is @D:\Projects\PAx5\SW@.
+
+h2. Start with an empty workspace
+
+By deleting the @D:\Projects\PAx5\SW\.metadata@__ directory you start with an empty workspace.
+
+Open Atollic TrueSTUDIO and select as workspace directory @D:\Projects\PAx5\SW@.
+
+h2. Import the projects
+
+Launch the import window with *File -> Open Projects from File System...*
+Click the *Directory...* button and select @D:\Projects\PAx5\SW@ directory.
+Select only the projects and click the *Finish* button.
+
+h1. Done
+

@@ -1,0 +1,22 @@
+# ignore everything in this folder ...
+/*
+# ... except relevant files ...
+!/.gitignore
+!/*.md
+# ... and relevant folders
+!/PAx5_Base/
+!/PAx5_BoardTester/
+!/PAx5_Docs/
+!/PAx5_Gateway/
+!/PAx5_Node/
+
+# ignore the Debug and Release folders
+Debug/
+Release/
+
+# ignore archives
+*.7z
+*.zip
+
+# others
+Thumbs.db

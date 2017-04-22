@@ -1,0 +1,16 @@
+Doxygen:
+	Documenting the code: https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html
+	Special Commands: https://www.stack.nl/~dimitri/doxygen/manual/commands.html
+	Automatic link generation: https://www.stack.nl/~dimitri/doxygen/manual/autolink.html
+
+-----
+
+Google C++ Style Guide
+https://google.github.io/styleguide/cppguide.html
+
+Carnegie Mellon - Computer Science Department : 15-410 Coding Style and Doxygen Documentation
+https://www.cs.cmu.edu/~410/doc/doxygen.html
+
+http://www.yolinux.com/TUTORIALS/LinuxTutorialC++CodingStyle.html#DOXYGEN
+
+http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/doxygen-howto.html
