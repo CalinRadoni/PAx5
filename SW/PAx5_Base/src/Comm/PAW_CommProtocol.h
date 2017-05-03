@@ -13,13 +13,13 @@
 
 namespace PAx5CommProtocol {
 
-#define CP_PACKET_RAW_OFFSET   2
+const     uint8_t CP_PACKET_RAW_OFFSET   = 2;
 
-#define CP_PACKET_HEADER_LEN   16
-#define CP_PACKET_HASH_LEN     8
-#define CP_PACKET_OVERHEAD     (CP_PACKET_HEADER_LEN + CP_PACKET_HASH_LEN)
-#define CP_PACKET_MAX_LEN      64
-#define CP_PACKET_MAX_DATA_LEN (CP_PACKET_MAX_LEN - CP_PACKET_OVERHEAD)
+const     uint8_t CP_PACKET_HEADER_LEN   = 16;
+const     uint8_t CP_PACKET_HASH_LEN     = 8;
+constexpr uint8_t CP_PACKET_OVERHEAD     = (CP_PACKET_HEADER_LEN + CP_PACKET_HASH_LEN);
+const     uint8_t CP_PACKET_MAX_LEN      = 64;
+constexpr uint8_t CP_PACKET_MAX_DATA_LEN = (CP_PACKET_MAX_LEN - CP_PACKET_OVERHEAD);
 
 #define CP_PACKET_HDR_Length_POS  0
 #define CP_PACKET_HDR_DstAddr_POS 1
@@ -39,6 +39,7 @@ namespace PAx5CommProtocol {
 #define CP_TIME_WAIT_ACK     1000
 #define CP_TIME_Process_Cmd  5000
 
+// TODO Move this enum inside PAW_CommProtocol before the CheckAddresses function
 namespace PAW_ChkAddr {
 	enum CheckAddrResult {
 		wrongCombo = 0,
@@ -49,9 +50,11 @@ namespace PAW_ChkAddr {
 	};
 };
 
-/** @brief Packet format version 1
+/**
+ * \brief Packet format version 1
  *
- * Length and DstAddr are shared with RFM69 layer. Must keep their positions.
+ * \details
+ * Length and DstAddr are shared with RFM69 layer. MUST keep their positions.
  *
  * - Header         CP_PACKET_HEADER_LEN bytes
  *    - Length       1 byte = the length of entire packet
@@ -70,26 +73,6 @@ namespace PAW_ChkAddr {
  */
 
 class PAW_CommProtocol {
-protected:
-	Enc_ChaCha20 chacha;
-	CMAC_ChaCha20 cmac;
-
-	uint32_t currentSessionID;
-	uint32_t currentNonce[2];
-
-	/** @brief Compare two hashes
-	 *
-	 * Compares the hash from packet with a computed one (cmac.cmac).
-	 * The comparison runs in constant time, if `return res == 0` runs in constant time :)
-	 * to avoid timing attacks.
-	 *
-	 * @param [in] The index where the hash starts in packetRX
-	 */
-	bool CompareHashInConstantTime(uint8_t hashStartIdx);
-
-	void GetNewSessionID(void);
-	void NewNonce(void);
-
 public:
 	PAW_CommProtocol();
 
@@ -191,6 +174,26 @@ public:
 	 * Converts an uint32_t to 4 uint8_t, MSB first.
 	 */
 	void DW2BP(uint32_t, uint8_t*);
+
+protected:
+	Enc_ChaCha20 chacha;
+	CMAC_ChaCha20 cmac;
+
+	uint32_t currentSessionID;
+	uint32_t currentNonce[2];
+
+	/** @brief Compare two hashes
+	 *
+	 * Compares the hash from packet with a computed one (cmac.cmac).
+	 * The comparison runs in constant time, if `return res == 0` runs in constant time :)
+	 * to avoid timing attacks.
+	 *
+	 * @param [in] The index where the hash starts in packetRX
+	 */
+	bool CompareHashInConstantTime(uint8_t hashStartIdx);
+
+	void GetNewSessionID(void);
+	void NewNonce(void);
 };
 
 } /* namespace */

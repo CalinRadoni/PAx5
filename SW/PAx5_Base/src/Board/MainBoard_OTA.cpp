@@ -32,13 +32,10 @@ uint32_t internalFlashSize = 0;
  */
 __RAMFUNC bool WriteNewFirmware(uint32_t firmwareCodeLength)
 {
-	bool res;
-	uint32_t flashSize;
-
 	if(firmwareCodeLength == 0) return false;
 
 	if(firmwareCodeLength > internalFlashSize) return false;
-	flashSize = firmwareCodeLength;
+	uint32_t flashSize = firmwareCodeLength;
 
 	if(!sExternalFlash.Initialize()) return false;
 
@@ -60,11 +57,9 @@ __RAMFUNC bool WriteNewFirmware(uint32_t firmwareCodeLength)
 
 	uint32_t flashAddr, extFlashAddr;
 
-#if (CPUMF_PAGE_SIZE_Bytes > EXT_FLASH_PAGE_SIZE)
-	#error sExternalFlash::EXT_FLASH_PAGE_SIZE should be at least CPUMF_PAGE_SIZE bytes for this to work !
-#endif
+	static_assert(CPUMF_PAGE_SIZE_Bytes <= EXT_FLASH_PAGE_SIZE, "wrong page size");
 
-	res = true;
+	bool res = true;
 	extFlashAddr = firmwareAddressInExternalFLASH;
 	flashAddr    = CPU_MemoryFLASH_StartAddress;
 	while((flashSize > 0) && res){
@@ -135,12 +130,10 @@ MainBoardOTA::MainBoardOTA()
 
 void MainBoardOTA::InternalInit(void)
 {
-	uint32_t var;
-
 	internalFlashSize = sCPU.GetFlashMemSize();  ///< memory size in Kbytes
 	internalFlashSize = internalFlashSize << 10; ///< memory size in bytes
 
-	var = internalFlashSize;
+	uint32_t var = internalFlashSize;
 	var /= EXT_FLASH_SECTOR_SIZE;                    ///< required sectors in external FLASH
 	if(var > EXT_FLASH_SECTOR_CNT){
 		currentFlashAddr = 0;
@@ -159,9 +152,7 @@ void MainBoardOTA::InternalInit(void)
 
 void MainBoardOTA::InitDataAndExtFLASH(void)
 {
-	uint32_t var;
-
-	var = firmwareAddressInExternalFLASH;
+	uint32_t var = firmwareAddressInExternalFLASH;
 	while(var < EXT_FLASH_SIZE){
 		sExternalFlash.SetAddress(var);
 		sExternalFlash.SectorErase();
@@ -175,9 +166,7 @@ void MainBoardOTA::InitDataAndExtFLASH(void)
 
 bool MainBoardOTA::AddData(uint8_t *buffer, uint8_t len)
 {
-	uint8_t i;
-
-	for(i = 0; i < len; i++){
+	for(uint8_t i = 0; i < len; i++){
 		sExternalFlash.dataBuf[flashBuffIdx] = buffer[i];
 		flashBuffIdx++;
 		if(flashBuffIdx >= EXT_FLASH_BUFFER_LEN){
@@ -227,13 +216,10 @@ uint32_t MainBoardOTA::ComputeCRCforStoredFirmware(void)
 {
 	uint32_t flashSize, useSize;
 	uint32_t extFlashAddr;
-	uint32_t computedCRC;
 
 	sCRC.Enable();
 
-#if CPUMF_PAGE_SIZE_Bytes > EXT_FLASH_PAGE_SIZE
-	#error "Rebuild this function !"
-#endif
+	static_assert(CPUMF_PAGE_SIZE_Bytes <= EXT_FLASH_PAGE_SIZE, "wrong page size");
 
 	flashSize = firmwareSize;
 	extFlashAddr = firmwareAddressInExternalFLASH;
@@ -256,7 +242,7 @@ uint32_t MainBoardOTA::ComputeCRCforStoredFirmware(void)
 		}
 	}
 
-	computedCRC = sCRC.GetData();
+	uint32_t computedCRC = sCRC.GetData();
 	sCRC.Disable();
 
 	return computedCRC;

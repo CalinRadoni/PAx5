@@ -14,9 +14,7 @@ namespace PAx5CommProtocol {
 
 // -----------------------------------------------------------------------------
 
-#if RFM69_RadioBufferOffset != CP_PACKET_RAW_OFFSET
-	#error "CP_PACKET_RAW_OFFSET must be equal with RFM69_RadioBufferOffset"
-#endif
+static_assert(PAx5::RFM69_RadioBufferOffset == CP_PACKET_RAW_OFFSET, "wrong offsets");
 
 // -----------------------------------------------------------------------------
 
@@ -78,7 +76,7 @@ PAW_TimedSlot* PAW_NetWorker::GetFreeSlot(uint8_t srcAddr)
 	res = GW_MAX_COMM_SLOTS;
 	found = false;
 	for(i = 0; i < GW_MAX_COMM_SLOTS; i++){
-		if(commSlots[i].state == PAW_TimedSlot::stateIdle) res = i;
+		if(commSlots[i].state == PAW_TimedSlot::PAW_TS_State::stateIdle) res = i;
 		else{
 			if(commSlots[i].peerAddress == srcAddr)
 				found = true;
@@ -114,18 +112,18 @@ PAW_NetWorker::PAW_RXCheckResult PAW_NetWorker::CheckReceivedPacket(void)
 	uint8_t i, *ptr;
 	PAW_TimedSlot* nodeTS;
 
-	if(PAx5::sRadio.packetReceivedLen > CP_PACKET_MAX_LEN) return chk_RxLenHigh; ///< packet too long
-	packLen = PAx5::sRadio.radioBuffer[CP_PACKET_HDR_Length_POS + RFM69_RadioBufferOffset];
-	if(PAx5::sRadio.packetReceivedLen != packLen) return chk_RxLenDifferent; ///< length != received length
-	if(packLen < CP_PACKET_OVERHEAD) return chk_RxLenLow; ///< packet too short
+	if(PAx5::sRadio.packetReceivedLen > CP_PACKET_MAX_LEN) return PAW_RXCheckResult::chk_RxLenHigh; ///< packet too long
+	packLen = PAx5::sRadio.radioBuffer[CP_PACKET_HDR_Length_POS + PAx5::RFM69_RadioBufferOffset];
+	if(PAx5::sRadio.packetReceivedLen != packLen) return PAW_RXCheckResult::chk_RxLenDifferent; ///< length != received length
+	if(packLen < CP_PACKET_OVERHEAD) return PAW_RXCheckResult::chk_RxLenLow; ///< packet too short
 
-	ptr = (uint8_t*)&PAx5::sRadio.radioBuffer[RFM69_RadioBufferOffset];
+	ptr = (uint8_t*)&PAx5::sRadio.radioBuffer[PAx5::RFM69_RadioBufferOffset];
 	// copy the packet from sRadio
 	for(i = 0; i < packLen; i++)
 		commProtocol.packetRX[i] = *ptr++;
 
 	checkAddr = commProtocol.CheckAddresses();
-	if(checkAddr == PAW_ChkAddr::wrongCombo) return chk_WrongAddr;    ///< addresses are wrong or not for this node
+	if(checkAddr == PAW_ChkAddr::wrongCombo) return PAW_RXCheckResult::chk_WrongAddr;    ///< addresses are wrong or not for this node
 
 	flags    = commProtocol.packetRX[CP_PACKET_HDR_FLAGS_POS] & CP_PACKET_HDR_FLAGS;
 	srcAddr  = commProtocol.packetRX[CP_PACKET_HDR_SrcAddr_POS];
@@ -133,22 +131,22 @@ PAW_NetWorker::PAW_RXCheckResult PAW_NetWorker::CheckReceivedPacket(void)
 
 	if(checkAddr == PAW_ChkAddr::srcNone_dstGW){
 		// TODO Check if it is an address request packet and process it if it is.
-		return chk_AddrRequest;
+		return PAW_RXCheckResult::chk_AddrRequest;
 	}
 
 	if(checkAddr == PAW_ChkAddr::srcOK_dstBcast) {
 		// TODO Process broadcast packet. Define them first !
-		return chk_Bcast;
+		return PAW_RXCheckResult::chk_Bcast;
 	}
 
 	if(commProtocol.nodeAddress == AddressClass::Address_Gateway){
 		if((checkAddr != PAW_ChkAddr::srcOK_dstME) && (checkAddr != PAW_ChkAddr::srcOK_dstGW)){
-			return chk_AddrOther;
+			return PAW_RXCheckResult::chk_AddrOther;
 		}
 	}
 	else{
 		if(checkAddr != PAW_ChkAddr::srcOK_dstME) {
-			return chk_AddrOther;
+			return PAW_RXCheckResult::chk_AddrOther;
 		}
 	}
 
@@ -158,14 +156,14 @@ PAW_NetWorker::PAW_RXCheckResult PAW_NetWorker::CheckReceivedPacket(void)
 		// this is a request packet
 
 		// the packet should contain at least the client nonce
-		if(packLen < (CP_PACKET_OVERHEAD + 8)) return chk_WronkPacketLen;
+		if(packLen < (CP_PACKET_OVERHEAD + 8)) return PAW_RXCheckResult::chk_WronkPacketLen;
 
 		// check signature and decrypt the packet
-		if(!commProtocol.CheckSignatureAndDecrypt(&netCtx)) return chk_SignatureFailed;
+		if(!commProtocol.CheckSignatureAndDecrypt(&netCtx)) return PAW_RXCheckResult::chk_SignatureFailed;
 
 		// get a free communication slot
 		nodeTS = GetFreeSlot(srcAddr);
-		if(nodeTS == NULL) return chk_CommSlotsFull;
+		if(nodeTS == NULL) return PAW_RXCheckResult::chk_CommSlotsFull;
 
 		// store client ID and address
 		nodeTS->peerAddress = srcAddr;
@@ -182,24 +180,24 @@ PAW_NetWorker::PAW_RXCheckResult PAW_NetWorker::CheckReceivedPacket(void)
 		commProtocol.CreateSessionKey(nodeTS);
 
 		if(!SendPacket())
-			return chk_ChannelNotFree;
-		return chk_ReqAckSent;
+			return PAW_RXCheckResult::chk_ChannelNotFree;
+		return PAW_RXCheckResult::chk_ReqAckSent;
 	}
 
 	if(flags == (CP_PACKET_HDR_REQ | CP_PACKET_HDR_ACK)){
 		// get the communication slot
-		nodeTS = GetSlot(srcAddr, packetID, PAW_TimedSlot::stateWaitReqAck);
-		if(nodeTS == NULL) return chk_ReqAckNoReq;
+		nodeTS = GetSlot(srcAddr, packetID, PAW_TimedSlot::PAW_TS_State::stateWaitReqAck);
+		if(nodeTS == NULL) return PAW_RXCheckResult::chk_ReqAckNoReq;
 		// is from my peer ?
-		if(nodeTS->peerAddress != srcAddr) return chk_NotMyPeer;
+		if(nodeTS->peerAddress != srcAddr) return PAW_RXCheckResult::chk_NotMyPeer;
 		// is the same session ID ?
-		if(nodeTS->GetSessionID() != packetID) return chk_WrongSessionID;
+		if(nodeTS->GetSessionID() != packetID) return PAW_RXCheckResult::chk_WrongSessionID;
 
 		// the packet should contain at least the server nonce
-		if(packLen < (CP_PACKET_OVERHEAD + 8)) return chk_WronkPacketLen;
+		if(packLen < (CP_PACKET_OVERHEAD + 8)) return PAW_RXCheckResult::chk_WronkPacketLen;
 
 		// check signature and decrypt the packet
-		if(!commProtocol.CheckSignatureAndDecrypt(&netCtx)) return chk_SignatureFailed;
+		if(!commProtocol.CheckSignatureAndDecrypt(&netCtx)) return PAW_RXCheckResult::chk_SignatureFailed;
 
 		// store peer's nonce
 		dataH = commProtocol.BP2DW(&commProtocol.packetRX[CP_PACKET_HEADER_LEN]);
@@ -209,41 +207,41 @@ PAW_NetWorker::PAW_RXCheckResult PAW_NetWorker::CheckReceivedPacket(void)
 		commProtocol.CreateSessionKey(nodeTS);
 
 		dataPeer = nodeTS;
-		return chk_ReqAckReceived;
+		return PAW_RXCheckResult::chk_ReqAckReceived;
 	}
 
 	if(flags == CP_PACKET_HDR_ACK){
 		// get the communication slot
-		nodeTS = GetSlot(srcAddr, packetID, PAW_TimedSlot::stateWaitAck);
-		if(nodeTS == NULL) return chk_AckNoAck;
+		nodeTS = GetSlot(srcAddr, packetID, PAW_TimedSlot::PAW_TS_State::stateWaitAck);
+		if(nodeTS == NULL) return PAW_RXCheckResult::chk_AckNoAck;
 		// is from my peer ?
-		if(nodeTS->peerAddress != srcAddr) return chk_NotMyPeer;
+		if(nodeTS->peerAddress != srcAddr) return PAW_RXCheckResult::chk_NotMyPeer;
 		// is the same session ID ?
-		if(nodeTS->GetSessionID() != packetID) return chk_WrongSessionID;
+		if(nodeTS->GetSessionID() != packetID) return PAW_RXCheckResult::chk_WrongSessionID;
 
 		// check signature and decrypt the packet
-		if(!commProtocol.CheckSignatureAndDecrypt(&nodeTS->sessionEncCtx)) return chk_SignatureFailed;
+		if(!commProtocol.CheckSignatureAndDecrypt(&nodeTS->sessionEncCtx)) return PAW_RXCheckResult::chk_SignatureFailed;
 
 		dataPeer = nodeTS;
-		return chk_AckReceived;
+		return PAW_RXCheckResult::chk_AckReceived;
 	}
 
 	// this should be a data packet for which a commSlot is in the stateHandshakeDone state
-	nodeTS = GetSlot(srcAddr, packetID, PAW_TimedSlot::stateHandshakeDone);
-	if(nodeTS == NULL) return chk_DataNotPeer;
+	nodeTS = GetSlot(srcAddr, packetID, PAW_TimedSlot::PAW_TS_State::stateHandshakeDone);
+	if(nodeTS == NULL) return PAW_RXCheckResult::chk_DataNotPeer;
 
-	if(!commProtocol.CheckSignatureAndDecrypt(&nodeTS->sessionEncCtx)) return chk_SignatureFailed;
+	if(!commProtocol.CheckSignatureAndDecrypt(&nodeTS->sessionEncCtx)) return PAW_RXCheckResult::chk_SignatureFailed;
 
 	commProtocol.CreateAckPacket(nodeTS, 0);
 	if(!SendPacket())
-		return chk_ChannelNotFree;
+		return PAW_RXCheckResult::chk_ChannelNotFree;
 
 	if(flags == CP_PACKET_HDR_WAIT) nodeTS->UpdateTimeSlotAckReceived(CP_TIME_WAIT_DATA);
 	else                            nodeTS->UpdateTimeSlotAckReceived(0);
 
 	dataPeer = nodeTS;
 
-	return chk_PacketOK;
+	return PAW_RXCheckResult::PacketOK;
 }
 
 bool PAW_NetWorker::SendPacket(void)

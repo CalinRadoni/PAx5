@@ -23,7 +23,7 @@ CPU_I2C sI2C;
 
 CPU_I2C::CPU_I2C() {
 	buffLen = 0;
-	status = I2C_STATE_Disabled;
+	status = I2CStatus_Disabled;
 	transferDone = true;
 
 	myAddress = 0;
@@ -59,7 +59,7 @@ void CPU_I2C::Enable(void)
 	NVIC_SetPriority(I2C1_IRQn, NVIC_PRIORITY_I2C);
 	NVIC_EnableIRQ(I2C1_IRQn);
 
-	status = I2C_STATE_OK;
+	status = I2CStatus_OK;
 }
 
 void CPU_I2C::EnableAsSlave(uint8_t mySlaveAddress)
@@ -88,22 +88,22 @@ void CPU_I2C::EnableAsSlave(uint8_t mySlaveAddress)
 	NVIC_SetPriority(I2C1_IRQn, NVIC_PRIORITY_I2C);
 	NVIC_EnableIRQ(I2C1_IRQn);
 
-	status = I2C_STATE_OK;
+	status = I2CStatus_OK;
 }
 
 void CPU_I2C::Disable(void)
 {
 	I2C1->CR1 = I2C1->CR1 & ~(I2C_CR1_PE);
-	status |= I2C_STATE_Disabled;
+	status |= I2CStatus_Disabled;
 }
 
 // -----------------------------------------------------------------------------
 
 void CPU_I2C::Read(uint8_t slaveAddr)
 {
-	if((status & I2C_STATE_Disabled) != 0) Enable();
+	if((status & I2CStatus_Disabled) != 0) Enable();
 
-	status = I2C_STATE_OK;
+	status = I2CStatus_OK;
 	transferDone = false;
 	buffIdx = 0;
 
@@ -115,7 +115,7 @@ void CPU_I2C::Read(uint8_t slaveAddr)
 	uint32_t timeStart = sysTickCnt;
 	while(!transferDone) {
 		if((sysTickCnt - timeStart) >= TIMEOUT_I2C_INIT){
-			status |= I2C_STATE_Timeout;
+			status |= I2CStatus_Timeout;
 			transferDone = true;
 			hwLogger.AddEntry(FileID, LOG_CODE_RTimeout, (uint16_t)slaveAddr);
 		}
@@ -124,9 +124,9 @@ void CPU_I2C::Read(uint8_t slaveAddr)
 
 void CPU_I2C::Write(uint8_t slaveAddr)
 {
-	if((status & I2C_STATE_Disabled) != 0) Enable();
+	if((status & I2CStatus_Disabled) != 0) Enable();
 
-	status = I2C_STATE_OK;
+	status = I2CStatus_OK;
 	transferDone = false;
 	buffIdx = 0;
 
@@ -139,7 +139,7 @@ void CPU_I2C::Write(uint8_t slaveAddr)
 	uint32_t timeStart = sysTickCnt;
 	while(!transferDone) {
 		if((sysTickCnt - timeStart) >= TIMEOUT_I2C_INIT){
-			status |= I2C_STATE_Timeout;
+			status |= I2CStatus_Timeout;
 			transferDone = true;
 			hwLogger.AddEntry(FileID, LOG_CODE_WTimeout, (uint16_t)slaveAddr);
 		}
@@ -187,13 +187,13 @@ void CPU_I2C::HandleI2CInt(void)
 	else if((intStatus & I2C_ISR_RXNE) == I2C_ISR_RXNE) {
 		// read receive register, automatically clear RXNE flag
 		dataIn = I2C1->RXDR;
-		if(buffIdx < I2C_BUFF_LEN){
+		if(buffIdx < I2CBufferLen){
 			buffer[buffIdx] = (uint8_t)(dataIn & 0xFF);
 			buffIdx++;
 		}
 	}
 	else if((intStatus & I2C_ISR_NACKF) == I2C_ISR_NACKF){
-		status |= I2C_STATE_NACK;
+		status |= I2CStatus_NACK;
 		transferDone = true;
 		buffLen = buffIdx;
 		I2C1->ICR = I2C_ICR_NACKCF; // clear flag
@@ -205,7 +205,7 @@ void CPU_I2C::HandleI2CInt(void)
 	}
 	else if((intStatus & I2C_ISR_TXIS) == I2C_ISR_TXIS){
 		// write next byte into I2C_TXDR, automatically clear flag
-		if(buffIdx < I2C_BUFF_LEN){
+		if(buffIdx < I2CBufferLen){
 			I2C1->TXDR = buffer[buffIdx];
 			buffIdx++;
 		}
@@ -229,7 +229,7 @@ void CPU_I2C::HandleI2CInt(void)
 		}
 	}
 	else {
-		status |= (I2C_STATE_IntfErr | I2C_STATE_Disabled);
+		status |= (I2CStatus_IntfErr | I2CStatus_Disabled);
 		hwLogger.AddEntry(FileID, LOG_CODE_IntHandler, (uint16_t)intStatus);
 		NVIC_DisableIRQ(I2C1_IRQn);
 	}

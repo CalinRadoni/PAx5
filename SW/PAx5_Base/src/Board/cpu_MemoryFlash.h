@@ -1,7 +1,7 @@
 /**
  * created 2016.05.29 by Calin Radoni
  *
- * This file declare the functions useable for working with CPU's internal FLASH
+ * This file declare the functions usable for working with CPU's internal FLASH
  *
  * Flash Start address: 0x00000000
  * SRAM Start address: 0x20000000
@@ -36,12 +36,13 @@
 
 namespace PAx5 {
 
+// TODO use const and constexpr here !!!
 #define CPUMF_HALFPAGE_SIZE_DW     16
 #define CPUMF_HALFPAGE_SIZE_Bytes (CPUMF_HALFPAGE_SIZE_DW << 2)
 #define CPUMF_PAGE_SIZE_Bytes     (CPUMF_HALFPAGE_SIZE_Bytes << 1)
 
 /**
- * @attention Do NOT use a dedicated buffer ! For OTA there is a big buffer available in DEV_ExternalFlash.
+ * \attention Do NOT use a dedicated buffer ! For OTA there is a big buffer available in DEV_ExternalFlash.
  */
 
 /** Address for Erase and WriteHalfPage operations
@@ -51,11 +52,11 @@ namespace PAx5 {
  */
 extern uint32_t CPU_MemoryFLASH_address;
 
-#define CPU_MemoryFLASH_Sector   ((CPU_MemoryFLASH_address - 0x08000000) >> 12)
-#define CPU_MemoryFLASH_Page     ((CPU_MemoryFLASH_address - 0x08000000) >> 7)
-#define CPU_MemoryFLASH_HalfPage ((CPU_MemoryFLASH_address >> 6) & 0x01)
+inline uint32_t CPU_MemoryFLASH_GetSector(void)   { return ((CPU_MemoryFLASH_address - 0x08000000U) >> 12U); }
+inline uint32_t CPU_MemoryFLASH_GetPage(void)     { return ((CPU_MemoryFLASH_address - 0x08000000U) >> 7U); }
+inline uint32_t CPU_MemoryFLASH_GetHalfPage(void) { return ((CPU_MemoryFLASH_address >> 6U) & 0x01U); }
 
-#define CPU_MemoryFLASH_StartAddress 0x08000000
+const uint32_t CPU_MemoryFLASH_StartAddress = 0x08000000U;
 
 /** Unlock the FLASH to enable erasing and writing operations
  *
@@ -80,9 +81,8 @@ __RAMFUNC void CPU_MemoryFLASH_Lock(void);
  *
  * @warning This function disables interrupts while writting !
  *
- * @example
- * Delete pages 510 and 511
- * @code{.cpp}
+ * \code{.cpp}
+ * // Delete pages 510 and 511
  * if(CPU_MemoryFLASH_Unlock()){
  *     CPU_MemoryFLASH_address = 0x0800FF00; // start of page 510
  *     CPU_MemoryFLASH_ErasePage();
@@ -90,7 +90,7 @@ __RAMFUNC void CPU_MemoryFLASH_Lock(void);
  *     CPU_MemoryFLASH_ErasePage();
  *     CPU_MemoryFLASH_Lock();
  * }
- * @endcode
+ * \endcode
  */
 __RAMFUNC bool CPU_MemoryFLASH_ErasePage(void);
 
@@ -108,9 +108,8 @@ __RAMFUNC bool CPU_MemoryFLASH_ErasePage(void);
  *
  * @warning This function disables interrupts while writting !
  *
- * @example
- * Write page 511
- * @code{.cpp}
+ * \code{.cpp}
+ * // Write page 511
  * uint8_t wdata[CPUMF_HALFPAGE_SIZE_Bytes];
  * if(CPU_MemoryFLASH_Unlock()){
  *     CPU_MemoryFLASH_address = 0x0800FF80; // page 511, start of first half-page
@@ -119,7 +118,7 @@ __RAMFUNC bool CPU_MemoryFLASH_ErasePage(void);
  *     CPU_MemoryFLASH_WriteHalfPage(wdata);
  *     CPU_MemoryFLASH_Lock();
  * }
- * @endcode
+ * \endcode
  */
 __RAMFUNC bool CPU_MemoryFLASH_WriteHalfPage(uint8_t*);
 
@@ -134,6 +133,7 @@ __RAMFUNC bool CPU_OptionBytes_Unlock(void);
  * PELOCK is set to 1 (will automatically set PRGLOCK and OPTLOCK to one)
  */
 __RAMFUNC void CPU_OptionBytes_Lock(void);
+
 } /* namespace */
 
 #endif /* cpu_MEMORYFLASH_H_ */

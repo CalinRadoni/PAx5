@@ -150,7 +150,7 @@ void CPU_EntropyADC::HandleADCInterrupt(void)
 				buffer[buffIdx] = entropyByte;
 				buffMask = 0x01;
 				buffIdx++;
-				if(buffIdx == ENTROPY_BUFFER_LEN_ADC){
+				if(buffIdx == EntropyBufferLenADC){
 					CollectStop();
 					collected = true;
 				}

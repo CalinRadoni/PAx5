@@ -18,12 +18,12 @@ FILEID(9)
 // -----------------------------------------------------------------------------
 
 #ifdef STM32L051xx
-	#define FLASH_PEKEY1  0x89ABCDEF
-	#define FLASH_PEKEY2  0x02030405
-	#define FLASH_PRGKEY1 0x8C9DAEBF
-	#define FLASH_PRGKEY2 0x13141516
-	#define FLASH_OPTKEY1 0xFBEAD9C8
-	#define FLASH_OPTKEY2 0x24252627
+	const uint32_t FLASH_PEKEY1  = 0x89ABCDEFU;
+	const uint32_t FLASH_PEKEY2  = 0x02030405U;
+	const uint32_t FLASH_PRGKEY1 = 0x8C9DAEBFU;
+	const uint32_t FLASH_PRGKEY2 = 0x13141516U;
+	const uint32_t FLASH_OPTKEY1 = 0xFBEAD9C8U;
+	const uint32_t FLASH_OPTKEY2 = 0x24252627U;
 #else
 	#error "Define FLASH_PEKEY and FLASH_PRGKEY for your processor !"
 #endif

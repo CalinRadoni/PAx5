@@ -10,15 +10,6 @@
 namespace PAx5 {
 
 class DEV_LED {
-protected:
-	uint8_t  mode;
-	uint32_t timeOn;
-	uint32_t timeOff;
-	uint8_t  repeatCnt;
-
-	bool ledON;
-	uint32_t runTime;
-
 public:
 	DEV_LED();
 
@@ -61,6 +52,15 @@ public:
 	 * Returns true while current sequence is NOT completed.
 	 */
 	bool Pulse(uint32_t ms);
+
+protected:
+	uint8_t  mode;
+	uint32_t timeOn;
+	uint32_t timeOff;
+	uint8_t  repeatCnt;
+
+	bool ledON;
+	uint32_t runTime;
 };
 
 extern DEV_LED sLED;

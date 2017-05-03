@@ -17,7 +17,8 @@ protected:
 public:
 	PAW_TimedSlot();
 
-	enum PAW_TS_State {
+	enum class PAW_TS_State : uint8_t
+	{
 		stateIdle = 0,
 		stateWaitReqAck = 1,
 		stateHandshakeDone = 2,

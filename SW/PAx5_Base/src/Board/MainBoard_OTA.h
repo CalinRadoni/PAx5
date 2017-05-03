@@ -9,13 +9,15 @@
 
 namespace PAx5 {
 
-/** High level OTA
+// TODO ExtFlash-OTA: Rebuild this class. ExtFlash must have high level functions not this class !
+
+/**
+ * \brief High level OTA
  *
- * This class takes care of writting the new firmware in the external FLASH.
- * After the firmware is written, to transfer it in internal FLASH, call TransferFirmware function.
+ * \details This class takes care of writing the new firmware in the external FLASH.
+ *          After the firmware is written, to transfer it in internal FLASH, call TransferFirmware function.
  *
- * @example
- * @code{.cpp}
+ * \code{.cpp}
  * sMainBoardOTA.InitDataAndExtFLASH();
  * while(!all_data_added){
  *     if(!sMainBoardOTA.AddData(..., ...))
@@ -25,16 +27,9 @@ namespace PAx5 {
  * if(sMainBoardOTA.ComputeCRCforStoredFirmware() != correctCRC) return false;
  * if(!sMainBoardOTA.TransferFirmware()) return false;
  * return true;
- * @endcode
+ * \endcode
  */
 class MainBoardOTA{
-private:
-	uint32_t currentFlashAddr;
-	uint16_t flashBuffIdx;
-	uint32_t firmwareSize;
-
-	void InternalInit(void);
-
 public:
 	MainBoardOTA();
 
@@ -44,9 +39,10 @@ public:
 
 	uint32_t ComputeCRCforStoredFirmware(void);
 
-	/** Transfer downloaded firmware form external FLASH to internal FLASH
+	/**
+	 * \brief Transfer downloaded firmware form external FLASH to internal FLASH
 	 *
-	 * The function will return false if:
+	 * \details The function will return false if:
 	 *   - firmwareSize is 0
 	 *   - firmwareSize > internalFlashSize
 	 *   - failed to initialize external FLASH
@@ -54,13 +50,20 @@ public:
 	 *   - failed to unlock internal FLASH
 	 *
 	 * Onboard LED is turned ON after previous checks
-	 * When writting is finalized:
-	 *   - LED blinks 20 * (short-long) if writting failed or 5 short pulses if OK
+	 * When writing is finalized:
+	 *   - LED blinks 20 * (short-long) if writing failed or 5 short pulses if OK
 	 *   - the board is reset
 	 *
-	 * @attention This function will not return if writting started, the board will reset.
+	 * \attention This function will not return if writing started, the board will reset.
 	 */
 	bool TransferFirmware(void);
+
+private:
+	uint32_t currentFlashAddr;
+	uint16_t flashBuffIdx;
+	uint32_t firmwareSize;
+
+	void InternalInit(void);
 };
 
 } /* namespace */

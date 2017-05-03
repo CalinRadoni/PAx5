@@ -14,12 +14,13 @@
 /**
  * To use __RAMFUNC, in the linker script file (stm32_flash.ld) add the section RamFunctions
  * In .data (Initialized data sections) add:
- * 		*(.RamFunctions)
+ *      . = ALIGN(4);
+ *      *(.RamFunctions)
  * 	after:
- *		(.data)
- *		(.data*)
+ *      *(.data)
+ *      *(.data*)
  *	declarations, and use it like this in function declarations and definitions of functions:
- *		__RAMFUNC void some_ram_function(void);
+ *      __RAMFUNC void some_ram_function(void);
  */
 #define __RAMFUNC __attribute__((section(".RamFunctions")))
 

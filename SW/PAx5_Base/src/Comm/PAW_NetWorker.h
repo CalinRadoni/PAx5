@@ -25,8 +25,9 @@ public:
 	PAW_TimedSlot* GetFreeSlot(uint8_t);
 	PAW_TimedSlot* GetSlot(uint8_t, uint32_t, PAW_TimedSlot::PAW_TS_State);
 
-	enum PAW_RXCheckResult {
-		chk_PacketOK        =  0, // OK, received a data packet
+	enum class PAW_RXCheckResult : uint8_t
+	{
+		PacketOK        =  0, // OK, received a data packet
 
 		chk_RxLenHigh       =  1, // fail
 		chk_RxLenDifferent  =  2, // fail

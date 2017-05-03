@@ -17,21 +17,21 @@ EXT_HIHSensor::~EXT_HIHSensor() {
 
 // -----------------------------------------------------------------------------
 
-uint8_t EXT_HIHSensor::ReadInit(void)
+EXT_HIHSensor::Status EXT_HIHSensor::ReadInit(void)
 {
 	sI2C.buffLen = 0;
 	sI2C.Write(0x27);
-	if(sI2C.status == I2C_STATE_OK)
-		return HIH_DATA_OK;
-	return HIH_DATA_IntfErr;
+	if(sI2C.status == I2CStatus_OK)
+		return Status::DATA_OK;
+	return Status::DATA_IntfErr;
 }
 
-uint8_t EXT_HIHSensor::ReadData(void)
+EXT_HIHSensor::Status EXT_HIHSensor::ReadData(void)
 {
 	uint8_t stale;
 	sI2C.buffLen = 4;
 	sI2C.Read(0x27);
-	if(sI2C.status == I2C_STATE_OK){
+	if(sI2C.status == I2CStatus_OK){
 		stale = sI2C.buffer[0] & 0xC0;
 
 		rawH  = sI2C.buffer[0] & 0x3F;
@@ -43,14 +43,14 @@ uint8_t EXT_HIHSensor::ReadData(void)
 		rawT += sI2C.buffer[3];
 		rawT  = rawT >> 2;
 
-		if(stale == 0x00) return HIH_DATA_OK;
-		if(stale == 0x40) return HIH_DATA_Stale;
-		return HIH_DATA_IntfErr;
+		if(stale == 0x00) return Status::DATA_OK;
+		if(stale == 0x40) return Status::DATA_Stale;
+		return Status::DATA_IntfErr;
 	}
 
-	if(sI2C.status == I2C_STATE_NACK)
-		return HIH_DATA_NACK;
-	return HIH_DATA_IntfErr;
+	if(sI2C.status == I2CStatus_NACK)
+		return Status::DATA_NACK;
+	return Status::DATA_IntfErr;
 }
 
 // -----------------------------------------------------------------------------

@@ -9,22 +9,14 @@
 
 namespace PAx5 {
 
-#define ENTROPY_BUFFER_LEN_ADC 8
+const uint8_t EntropyBufferLenADC = 8;
 
 class CPU_EntropyADC {
-protected:
-	void Initialize(void);
-
-	volatile bool     collected;
-	volatile uint8_t  buffIdx, buffMask;
-	volatile uint8_t  whVal, whCnt;
-	volatile uint8_t  entropyByte;
-
 public:
 	CPU_EntropyADC();
 	virtual ~CPU_EntropyADC();
 
-	volatile uint8_t buffer[ENTROPY_BUFFER_LEN_ADC];
+	volatile uint8_t buffer[EntropyBufferLenADC];
 
 	void Enable(void);
 	void CollectStart(void);
@@ -36,6 +28,14 @@ public:
 	void Collect(void);
 
 	void HandleADCInterrupt(void);
+
+protected:
+	void Initialize(void);
+
+	volatile bool     collected;
+	volatile uint8_t  buffIdx, buffMask;
+	volatile uint8_t  whVal, whCnt;
+	volatile uint8_t  entropyByte;
 };
 
 extern CPU_EntropyADC entropyADC;

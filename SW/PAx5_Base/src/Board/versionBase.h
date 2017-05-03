@@ -7,13 +7,13 @@
 
 namespace PAx5 {
 
-// namespace is here just as a hint for user
-// the preprocessor knows nothing about namespaces
+// @warning: namespace is here just as a hint for user
+// the preprocessor knows nothing about namespaces !
 
 #define Base_SW_VER_MAJOR	0
-#define Base_SW_VER_MINOR	18
-#define Base_SW_VER_BUILD	462
+#define Base_SW_VER_MINOR	24
+#define Base_SW_VER_BUILD	512
 
-} /* namespace */
+}
 
 #endif /* VERSION_H_ */

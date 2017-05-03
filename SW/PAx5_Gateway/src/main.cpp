@@ -23,12 +23,16 @@ PAx5CommProtocol::PAW_TimedSlot *nodeTS;
 
 int main(void)
 {
-	uint32_t boardCapabilities;
+	PAx5::BoardDefinion boardDefinition;
+	boardDefinition.SetByType(PAx5::BoardDefinion::BoardType::PAx5_BaseBoard);
+
+	if(PAx5::board.InitializeBoard(boardDefinition) != PAx5::MainBoard::Error::OK){
+		PAx5::board.BlinkError();
+		while(1){ /* infinite loop */ }
+	}
+
 	uint32_t timeS, timeDelta;
 	uint8_t i, rxDataLen;
-
-	boardCapabilities = PAx5_BOARD_HW_USART | PAx5_BOARD_HW_I2C | PAx5_BOARD_HW_RFM69HW | PAx5_BOARD_HW_ExtFLASH;
-	PAx5::board.InitializeBoard(boardCapabilities);
 
 	timeS = PAx5::sysTickCnt;
 
@@ -80,26 +84,26 @@ int main(void)
 			chkRes = gateProtocol.CheckReceivedPacket();
 			PAx5::sTextOutput.FormatAndOutputString("rx: %d\r\n", (uint8_t)chkRes); PAx5::sTextOutput.Flush();
 			switch(chkRes){
-			case PAx5CommProtocol::PAW_NetWorker::chk_PacketOK:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::PacketOK:
 				/* Received a data packet
 				 * The communication slot is netWorker.dataPeer
 				 * The data is in netWorker.commProtocol.packetRX[CP_PACKET_HEADER_LEN]
 				 */
 
-				rxDataLen = gateProtocol.commProtocol.packetRX[CP_PACKET_HDR_Length_POS] - CP_PACKET_OVERHEAD;
+				rxDataLen = gateProtocol.commProtocol.packetRX[CP_PACKET_HDR_Length_POS] - PAx5CommProtocol::CP_PACKET_OVERHEAD;
 				PAx5::sTextOutput.FormatAndOutputString("Len = %d, Data =", rxDataLen);
 				for(i=0; i<rxDataLen; i++)
-					PAx5::sTextOutput.FormatAndOutputString(" %2x", gateProtocol.commProtocol.packetRX[CP_PACKET_HEADER_LEN + i]);
+					PAx5::sTextOutput.FormatAndOutputString(" %2x", gateProtocol.commProtocol.packetRX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + i]);
 				PAx5::sTextOutput.FormatAndOutputString("\r\n");
 
-				cval = gateProtocol.commProtocol.packetRX[CP_PACKET_HEADER_LEN];
+				cval = gateProtocol.commProtocol.packetRX[PAx5CommProtocol::CP_PACKET_HEADER_LEN];
 				cval = cval << 8;
-				cval += gateProtocol.commProtocol.packetRX[CP_PACKET_HEADER_LEN + 1];
+				cval += gateProtocol.commProtocol.packetRX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + 1];
 				PAx5::sTextOutput.FormatAndOutputString("10*RH = %d\t\t", cval);
 
-				cval = gateProtocol.commProtocol.packetRX[CP_PACKET_HEADER_LEN + 2];
+				cval = gateProtocol.commProtocol.packetRX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + 2];
 				cval = cval << 8;
-				cval += gateProtocol.commProtocol.packetRX[CP_PACKET_HEADER_LEN + 3];
+				cval += gateProtocol.commProtocol.packetRX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + 3];
 				cval -= 2731;
 				PAx5::sTextOutput.FormatAndOutputString("T = %d 10*degC", cval);
 
@@ -109,18 +113,18 @@ int main(void)
 				gateProtocol.dataPeer->RestartTimeSlot(0);
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_ReqAckReceived:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_ReqAckReceived:
 				/* REQ+ACK received, start sending data */
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_AckReceived:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_AckReceived:
 				/* ACK received, continue sending data or close the timeslot if done */
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_AddrRequest:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_AddrRequest:
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_Bcast:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_Bcast:
 				break;
 
 			default:

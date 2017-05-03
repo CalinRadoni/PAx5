@@ -110,7 +110,7 @@ void BoardTester::ShowHWLog(void)
 
 	sTextOutput.InitBuffer();
 
-	for(i = 0, cnt = 0; i < MAX_LOG_SIZE; i++){
+	for(i = 0, cnt = 0; i < MaxLogSize; i++){
 		if(hwLogger.List[i].source != 0){
 			cnt++;
 			sTextOutput.FormatAndOutputString("Time %d Source %d Code %2x Data %4x\r\n",
@@ -190,15 +190,13 @@ void BoardTester::TestBoard(void)
 				sExternalFlash.dataBuf[1], sExternalFlash.dataBuf[2], sExternalFlash.dataBuf[3]);
 		sTextOutput.Flush();
 
-		val = sSPI.SendCmdPlusAndWait(RFM69_RegVersion & 0x7F, 0, SPI_SLAVE_Radio);
+		val = sRadio.GetModuleVersion();
 		sTextOutput.FormatAndOutputString("  - RFM69 version: 0x%x\r\n", val);
 
 		sTextOutput.FormatAndOutputString("  - RFM69 RegSync3 check: ");
-		      sSPI.SendCmdPlusAndWait(RFM69_RegSyncValue3 | 0x80, 0x55, SPI_SLAVE_Radio);
-		val = sSPI.SendCmdPlusAndWait(RFM69_RegSyncValue3 & 0x7F, 0, SPI_SLAVE_Radio);
+		val = sRadio.TestSyncRegister(3, 0x55);
 		sTextOutput.FormatAndOutputString("0x%x ", val);
-		      sSPI.SendCmdPlusAndWait(RFM69_RegSyncValue3 | 0x80, 0xAA, SPI_SLAVE_Radio);
-		val = sSPI.SendCmdPlusAndWait(RFM69_RegSyncValue3 & 0x7F, 0, SPI_SLAVE_Radio);
+		val = sRadio.TestSyncRegister(3, 0xAA);
 		sTextOutput.FormatAndOutputString("0x%x\r\n", val);
 
 		if(sSPI.clockDivider == 7)
@@ -223,7 +221,7 @@ void BoardTester::TestEntropy(void)
 	sTextOutput.InitBuffer();
 
 	i = 0;
-	eCnt = 4 * ENTROPY_BUFFER_LEN;
+	eCnt = 4 * EntropyBufferLen;
 	while(eCnt > 0){
 		if(i == 0) sTextOutput.FormatAndOutputString("\t");
 		sTextOutput.FormatAndOutputString(" %2x", entropy.Get8bits());
@@ -235,7 +233,7 @@ void BoardTester::TestEntropy(void)
 	}
 
 	i = 0;
-	eCnt = ENTROPY_BUFFER_LEN;
+	eCnt = EntropyBufferLen;
 	while(eCnt > 0){
 		if(i == 0) sTextOutput.FormatAndOutputString("\t");
 		sTextOutput.FormatAndOutputString(" %8x", entropy.Get32bits());
@@ -266,12 +264,12 @@ void BoardTester::TestEntropyADC(void)
 
 		entropyADC.CollectStart();
 		while(!entropyADC.EntropyCollected()) { __NOP(); } // wait
-		for(uint8_t i = 0; i < ENTROPY_BUFFER_LEN_ADC; i++)
+		for(uint8_t i = 0; i < EntropyBufferLenADC; i++)
 			sTextOutput.FormatAndOutputString(" %2x", entropyADC.buffer[i]);
 
 		entropyADC.CollectStart();
 		while(!entropyADC.EntropyCollected()) { __NOP(); } // wait
-		for(uint8_t i = 0; i < ENTROPY_BUFFER_LEN_ADC; i++)
+		for(uint8_t i = 0; i < EntropyBufferLenADC; i++)
 			sTextOutput.FormatAndOutputString(" %2x", entropyADC.buffer[i]);
 
 		sTextOutput.FormatAndOutputString("\r\n");
@@ -289,7 +287,7 @@ void BoardTester::TestADC(void)
 {
 	uint8_t round;
 
-	board.InitializeADCInput(0x07);
+	//TODO ZZZZZZZ board.InitializeADCInput(0x07);
 
 	round = 0;
 	sTextOutput.InitBuffer();
@@ -325,7 +323,7 @@ void BoardTester::TestADC(void)
 		Delay(1000);
 	}
 
-	board.InitializeADCInput(0x00);
+	//TODO ZZZZZZZ board.InitializeADCInput(0x00);
 }
 
 // -----------------------------------------------------------------------------
@@ -340,13 +338,13 @@ void BoardTester::TestI2C(void)
 		sI2C.buffLen = 0;
 		sI2C.Write(addr);
 		switch(sI2C.status) {
-			case I2C_STATE_OK:
+			case I2CStatus_OK:
 				sTextOutput.FormatAndOutputString("Found a device at address 0x%2x\r\n", addr);
 				sTextOutput.Flush();
 				break;
-			case I2C_STATE_NACK:
+			case I2CStatus_NACK:
 				break;
-			case I2C_STATE_IntfErr:
+			case I2CStatus_IntfErr:
 				sTextOutput.FormatAndOutputString("Error, exit.\r\n", addr);
 				sTextOutput.Flush();
 				addr = 0xFF;
@@ -359,10 +357,10 @@ void BoardTester::TestI2C(void)
 void BoardTester::TestI2C_HIH(void)
 {
 	uint32_t ts, te;
-	uint8_t res;
 	bool dataOK;
 	uint8_t round;
 	EXT_HIHSensor hihSensor;
+	EXT_HIHSensor::Status res;
 
 	sI2C.Enable();
 	sTextOutput.InitBuffer();
@@ -370,7 +368,7 @@ void BoardTester::TestI2C_HIH(void)
 	while(round < 10){
 		res = hihSensor.ReadInit();
 		ts = sysTickCnt;
-		if(res != HIH_DATA_OK){
+		if(res != EXT_HIHSensor::Status::DATA_OK){
 			sTextOutput.FormatAndOutputString("ReadInit failed (code %d) !\r\n", res);
 			sTextOutput.Flush();
 			round++;
@@ -381,7 +379,7 @@ void BoardTester::TestI2C_HIH(void)
 			while(!dataOK){
 				res = hihSensor.ReadData();
 				te = sysTickCnt - ts;
-				if(res == HIH_DATA_OK){
+				if(res == EXT_HIHSensor::Status::DATA_OK){
 					sTextOutput.FormatAndOutputString("Humidity %d %d[%%*10], Temperature %d %d[%cC*10], %d ms\r\n",
 							hihSensor.rawH, hihSensor.GetHumidity(), hihSensor.rawT, hihSensor.GetTemperature() - 2731, 0xB0, te);
 					sTextOutput.Flush();
@@ -389,7 +387,7 @@ void BoardTester::TestI2C_HIH(void)
 					round++;
 				}
 				else{
-					if(res == HIH_DATA_Stale) Delay(1);
+					if(res == EXT_HIHSensor::Status::DATA_Stale) Delay(1);
 					else{
 						// error
 						sTextOutput.FormatAndOutputString("Error %d !\r\n", res);
@@ -416,9 +414,9 @@ void TestI2CSlaveRequest(void)
 {
 	uint8_t i;
 
-	for(i = 0; i < I2C_BUFF_LEN; i++)
+	for(i = 0; i < I2CBufferLen; i++)
 		sI2C.buffer[i] = TestI2CSlaveDataIn + i + 1;
-	sI2C.buffLen = I2C_BUFF_LEN;
+	sI2C.buffLen = I2CBufferLen;
 
 	TestI2CSlaveDataTX++;
 }
@@ -465,7 +463,7 @@ void BoardTester::TestI2CSlave(void)
 void BoardTester::TestWS2812(void)
 {
 	sTextOutput.InitBuffer();
-	ws2812.Initialize(wsPIN_PB5);
+	ws2812.Initialize(EXT_WS2812::WSPinName::PB5);
 
 	for(uint8_t round = 0; round < 10; round++){
 		ws2812.InitData();
@@ -652,7 +650,7 @@ void BoardTester::TestFLASHProg(void)
 
 	CPU_MemoryFLASH_address = startAddress;
 	sTextOutput.FormatAndOutputString("Using page %d, halfpage %d, address %x\r\n",
-					CPU_MemoryFLASH_Page, CPU_MemoryFLASH_HalfPage, 0x0800FF00);
+			CPU_MemoryFLASH_GetPage(), CPU_MemoryFLASH_GetHalfPage(), 0x0800FF00);
 
 	entropy.Enable();
 	entropy.CollectStart();
@@ -660,7 +658,7 @@ void BoardTester::TestFLASHProg(void)
 	for(i = 0, j = 0; i < CPUMF_HALFPAGE_SIZE_Bytes; i++){
 		wdata[i] = entropy.buffer[j];
 		j++;
-		if(j == ENTROPY_BUFFER_LEN){
+		if(j == EntropyBufferLen){
 			j = 0;
 			entropy.CollectStart();
 			while(!entropy.EntropyCollected()) { __NOP(); }
@@ -687,11 +685,11 @@ void BoardTester::TestFLASHProg(void)
 	res = CPU_MemoryFLASH_ErasePage();
 	if(!res){
 		CPU_MemoryFLASH_Lock();
-		sTextOutput.FormatAndOutputString("Failed to erase page %d !\r\n", CPU_MemoryFLASH_Page);
+		sTextOutput.FormatAndOutputString("Failed to erase page %d !\r\n", CPU_MemoryFLASH_GetPage());
 		sTextOutput.Flush();
 		return;
 	}
-	sTextOutput.FormatAndOutputString("Page %d erased.\r\n", CPU_MemoryFLASH_Page);
+	sTextOutput.FormatAndOutputString("Page %d erased.\r\n", CPU_MemoryFLASH_GetPage());
 
 	sTextOutput.FormatAndOutputString("Data:");
 	for(i = 0, addr = startAddress; i < CPUMF_HALFPAGE_SIZE_DW; i++, addr += 4){
@@ -711,11 +709,11 @@ void BoardTester::TestFLASHProg(void)
 	res = CPU_MemoryFLASH_WriteHalfPage(wdata);
 	if(!res){
 		CPU_MemoryFLASH_Lock();
-		sTextOutput.FormatAndOutputString("Failed to write half page %d !\r\n", CPU_MemoryFLASH_HalfPage);
+		sTextOutput.FormatAndOutputString("Failed to write half page %d !\r\n", CPU_MemoryFLASH_GetHalfPage());
 		sTextOutput.Flush();
 		return;
 	}
-	sTextOutput.FormatAndOutputString("Half page %d written.\r\n", CPU_MemoryFLASH_HalfPage);
+	sTextOutput.FormatAndOutputString("Half page %d written.\r\n", CPU_MemoryFLASH_GetHalfPage());
 
 	sTextOutput.FormatAndOutputString("Data:");
 	for(i = 0, addr = startAddress; i < CPUMF_HALFPAGE_SIZE_DW; i++, addr += 4){
@@ -800,7 +798,7 @@ void BoardTester::TestExtFlash(void)
 	uint16_t testLength;
 	uint32_t testAddress;
 
-	testLength  = M25P_PageSize;
+	testLength  = sExternalFlash.GetPageSize();
 	testAddress = 0x0001FF00;
 
 	sTextOutput.InitBuffer();
@@ -936,7 +934,7 @@ void BoardTester::TestPAWPackets(void)
 
 	dataLen = 27;
 	for(i = 0; i < dataLen; i++)
-		pawc.packetTX[CP_PACKET_HEADER_LEN + i] = entropy.Get8bits();
+		pawc.packetTX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + i] = entropy.Get8bits();
 	entropy.Disable();
 	pawc.BuildPacketHeader(&encCtx, 0x11, 0x22, dataLen, 0x12345678);
 
@@ -947,7 +945,7 @@ void BoardTester::TestPAWPackets(void)
 
 	pawc.EncryptAndSign(&encCtx);
 
-	for(i = 0; i < CP_PACKET_MAX_LEN; i++)
+	for(i = 0; i < PAx5CommProtocol::CP_PACKET_MAX_LEN; i++)
 		pawc.packetRX[i] = pawc.packetTX[i];
 
 	res = pawc.CheckSignatureAndDecrypt(&encCtx);

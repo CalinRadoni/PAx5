@@ -14,7 +14,9 @@ volatile uint32_t sysTickCnt = 0;
 
 void Delay(uint32_t msIn){
 	uint32_t timeStart = sysTickCnt;
-	while((sysTickCnt - timeStart) < msIn){
+
+	while((sysTickCnt - timeStart) < msIn)
+	{
 		__NOP();
 	}
 }

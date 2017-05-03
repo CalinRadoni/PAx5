@@ -19,20 +19,20 @@ protected:
 	void BlockNoSum(void);
 	void Block(void);
 
-	/** Initialize the state based on CryptoContext.
-	 *
-	 * This function is called from the 'EncryptBlock' function.
+	/**
+	 * \brief Initialize the state based on CryptoContext.
+	 * \details This function is called from the 'EncryptBlock' function.
 	 */
 	void InitState(CryptoContext *ctx);
 
 public:
 	Enc_ChaCha20();
 
-	/** Encrypt a block of data.
+	/**
+	 * \brief Encrypt a block of data.
 	 *
-	 * @warning Maximum usable length is 64 bytes (512 bits).
-	 *
-	 * @warning No operation is performed if ctx==NULL !
+	 * \warning Maximum usable length is 64 bytes (512 bits).
+	 * \warning No operation is performed if ctx==NULL !
 	 */
 	void EncryptBlock(CryptoContext *ctx, uint8_t*, uint8_t);
 };

@@ -26,15 +26,19 @@ PAx5CommProtocol::PAW_TimedSlot *nodeTS;
 
 int main(void)
 {
-	uint32_t boardCapabilities;
+	PAx5::BoardDefinion boardDefinition;
+	boardDefinition.SetByType(PAx5::BoardDefinion::BoardType::PAx5_BaseBoard);
+
+	if(PAx5::board.InitializeBoard(boardDefinition) != PAx5::MainBoard::Error::OK){
+		PAx5::board.BlinkError();
+		while(1){ /* infinite loop */ }
+	}
+
 	uint32_t timeStart, timeDelta, timeQ;
 	uint8_t i;
 
 	PAx5::EXT_HIHSensor hihSensor;
 	uint16_t sH, sT;
-
-	boardCapabilities = PAx5_BOARD_HW_USART | PAx5_BOARD_HW_I2C | PAx5_BOARD_HW_RFM69HW | PAx5_BOARD_HW_ExtFLASH;
-	PAx5::board.InitializeBoard(boardCapabilities);
 
 	timeStart = PAx5::sysTickCnt;
 
@@ -87,30 +91,30 @@ int main(void)
 			chkRes = nodeProtocol.CheckReceivedPacket();
 			PAx5::sTextOutput.FormatAndOutputString("rx: %d\r\n", (uint8_t)chkRes); PAx5::sTextOutput.Flush();
 			switch(chkRes){
-			case PAx5CommProtocol::PAW_NetWorker::chk_PacketOK:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::PacketOK:
 				/* Received a data packet
 				 * The communication slot is netWorker.dataPeer
 				 * The data is in netWorker.commProtocol.packetRX[CP_PACKET_HDR_Length_POS]
 				 */
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_ReqAckReceived:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_ReqAckReceived:
 				/* REQ+ACK received, start sending data */
 				nodeTS = nodeProtocol.dataPeer;
 
 				PAx5::sTextOutput.FormatAndOutputString("REQ+ACK received\r\n", (uint8_t)chkRes); PAx5::sTextOutput.Flush();
 
-				if(hihSensor.ReadData() == HIH_DATA_OK){
+				if(hihSensor.ReadData() == PAx5::EXT_HIHSensor::Status::DATA_OK){
 					sH = hihSensor.GetHumidity();
 					sT = hihSensor.GetTemperature();
 					PAx5::sTextOutput.FormatAndOutputString("Data: %d %%RH %d degC", sH/10, (sT-2731)/10); PAx5::sTextOutput.Flush();
 				}
 				else{ sH = sT = 0xEEEE; }
 
-				nodeProtocol.commProtocol.packetTX[CP_PACKET_HEADER_LEN]     = (uint8_t)(sH >> 8);
-				nodeProtocol.commProtocol.packetTX[CP_PACKET_HEADER_LEN + 1] = (uint8_t)(sH & 0xFF);
-				nodeProtocol.commProtocol.packetTX[CP_PACKET_HEADER_LEN + 2] = (uint8_t)(sT >> 8);
-				nodeProtocol.commProtocol.packetTX[CP_PACKET_HEADER_LEN + 3] = (uint8_t)(sT & 0xFF);
+				nodeProtocol.commProtocol.packetTX[PAx5CommProtocol::CP_PACKET_HEADER_LEN]     = (uint8_t)(sH >> 8);
+				nodeProtocol.commProtocol.packetTX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + 1] = (uint8_t)(sH & 0xFF);
+				nodeProtocol.commProtocol.packetTX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + 2] = (uint8_t)(sT >> 8);
+				nodeProtocol.commProtocol.packetTX[PAx5CommProtocol::CP_PACKET_HEADER_LEN + 3] = (uint8_t)(sT & 0xFF);
 				nodeProtocol.commProtocol.CreateDataPacket(nodeTS, 4, true);
 
 				if(nodeProtocol.SendPacket()){
@@ -124,7 +128,7 @@ int main(void)
 				PAx5::sTextOutput.Flush();
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_AckReceived:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_AckReceived:
 				/* ACK received, continue sending data or close the timeslot if done */
 				nodeTS = nodeProtocol.dataPeer;
 
@@ -133,10 +137,10 @@ int main(void)
 				nodeTS->RestartTimeSlot(0);
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_AddrRequest:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_AddrRequest:
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::chk_Bcast:
+			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_Bcast:
 				break;
 
 			default:

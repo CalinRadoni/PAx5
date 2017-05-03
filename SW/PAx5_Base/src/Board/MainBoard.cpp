@@ -19,29 +19,14 @@ namespace PAx5 {
 // -----------------------------------------------------------------------------
 
 FILEID(1)
-#define LOG_CODE_START 1 // data = (uint16_T)(RCC->CSR >> 24)
+#define LOG_CODE_START 1 // data = (uint16_t)(RCC->CSR >> 24)
 #define LOG_CODE_CLOCK 2 // data = 1 for HSI timeout, 2 for PLL timeout, 3 for clock switching on PLL timeout
 
 // -----------------------------------------------------------------------------
 
-#define TIMEOUT_HSI         ((uint32_t)100)  // 100 ms
-#define TIMEOUT_PLL         ((uint32_t)100)  // 100 ms
-#define TIMEOUT_CLOCKSWITCH	((uint32_t)5000) // 5 s
-
-// -----------------------------------------------------------------------------
-
-typedef enum
-{
-	ERR_OK					= 0,
-	ERR_HSI_Timeout			= 1,
-	ERR_PLL_Timeout			= 2,
-	ERR_ClockSwitch_Timeout	= 3,
-	ERR_USART				= 4,
-	ERR_Radio               = 5,
-	ERR_NotInitialized      = 31
-} ERR_Board;
-
-ERR_Board brdErr;
+#define TIMEOUT_HSI         ((uint32_t)100U)  // 100 ms
+#define TIMEOUT_PLL         ((uint32_t)100U)  // 100 ms
+#define TIMEOUT_CLOCKSWITCH	((uint32_t)5000U) // 5 s
 
 // -----------------------------------------------------------------------------
 
@@ -49,16 +34,54 @@ MainBoard board;
 
 // -----------------------------------------------------------------------------
 
-MainBoard::MainBoard() {
-	brdErr = ERR_NotInitialized;
-	radioIntFired = false;
+BoardDefinion::BoardDefinion() {}
 
-	boardCapabilities = PAx5_BOARD_HW_USART | PAx5_BOARD_HW_I2C | PAx5_BOARD_HW_RFM69HW | PAx5_BOARD_HW_ExtFLASH;
+/*
+BoardDefinion& BoardDefinion::operator=(const BoardDefinion& src)
+{
+	if(&src == this) return *this; // self-assignment
+
+	Use_USART            = src.Use_USART;
+	Use_I2C              = src.Use_I2C;
+	Use_I2C_Slave        = src.Use_I2C_Slave;
+	ExtFLASH             = src.ExtFLASH;
+	Radio_RFM69HW        = src.Radio_RFM69HW;
+	PowerPeripherals_PA3 = src.PowerPeripherals_PA3;
+	...
+
+	return *this;
+}
+*/
+
+void BoardDefinion::SetByType(BoardType type)
+{
+	Use_USART     = true;
+	Use_I2C       = true; Use_I2C_Slave = false;
+	ExtFLASH      = true;
+	Radio_RFM69HW = true;
+
+	switch(type){
+		case BoardType::PAx5_BaseBoard:
+			PowerPeripherals_PA3 = false;
+			break;
+
+		case BoardType::PAx5_EnvSensor:
+			PowerPeripherals_PA3 = true;
+			break;
+	}
 }
 
 // -----------------------------------------------------------------------------
 
-void MainBoard::InitializeBoard(uint32_t capabilities)
+MainBoard::MainBoard()
+{
+	brdErr = Error::NotInitialized;
+	radioIntFired = false;
+}
+
+// -----------------------------------------------------------------------------
+
+MainBoard::Error MainBoard::InitializeBoard(BoardDefinion& boardDef)
 {
 	uint16_t resetSource;
 
@@ -69,65 +92,80 @@ void MainBoard::InitializeBoard(uint32_t capabilities)
 	// ... and add an entry to HWLog
 	hwLogger.AddEntry(FileID, LOG_CODE_START, resetSource);
 
-	boardCapabilities = capabilities;
+	boardCapabilities = boardDef;
 
-	brdErr = ERR_OK;
+	brdErr = Error::OK;
 
 	// clock configured for 2MHz in SystemInit() function called from startup_stm32l0xx.s
 	SysTick_Config(2000); // 1ms
 	ConfigureClock();
 	SystemCoreClockUpdate();
 
-	if(brdErr == ERR_OK){
+	if(brdErr == Error::OK){
 		SysTick_Config(32000); // 1ms
 
 		ConfigureGPIO();
 
-		if(boardCapabilities & PAx5_BOARD_HW_USART) {
+		if(boardCapabilities.Use_USART) {
 			if(!sUSART.Configure())
-				brdErr = ERR_USART;
+				brdErr = Error::USART;
 		}
 	}
 
-	if(brdErr == ERR_OK){
+	// power the peripherals if needed
+	if(boardCapabilities.PowerPeripherals_PA3){
+		GPIOA->BSRR = GPIO_BSRR_BR_3;
+	}
+
+	if(brdErr == Error::OK){
 		sSPI.Configure();
 		sSPI.defaultSPISettings = true;
 
 		ConfigureEXTI();
 
-		if(boardCapabilities & PAx5_BOARD_HW_ExtFLASH) {
+		if(boardCapabilities.ExtFLASH) {
 			sExternalFlash.Initialize();
 			sExternalFlash.PowerDown();
 		}
 
 		radioIntFired = 0;
-		if(boardCapabilities & PAx5_BOARD_HW_RFM69HW) {
+		if(boardCapabilities.Radio_RFM69HW) {
 			sRadio.initUseAFC = false;
 			sRadio.Initialize();
 			if(sRadio.interfaceError)
-				brdErr = ERR_Radio;
+				brdErr = Error::Radio;
 		}
 	}
 
-	if(brdErr != ERR_OK){
-		BlinkError();
-		while(1){
-			// infinite loop
-		}
+	return brdErr;
+}
+
+// -----------------------------------------------------------------------------
+
+void MainBoard::BlinkError(void){
+
+	if(brdErr == Error::OK) return;
+
+	uint8_t errIn = (uint8_t)brdErr;
+
+	sLED.Blink(1000);
+	while(errIn != 0){
+		sLED.Blink(300);
+		--errIn;
 	}
 }
 
 // -----------------------------------------------------------------------------
-/**
-  * Brief   This function configures the system clock @32MHz and voltage scale 1
-  *         assuming the registers have their reset value before the call.
-  *         POWER SCALE   = RANGE 1
-  *         SYSTEM CLOCK  = PLL MUL16 DIV2
-  *         PLL SOURCE    = HSI/4
-  *         FLASH LATENCY = 1
-  * Param   None
-  * Retval  None
-  */
+
+/** @brief Configure system clock to 32 MHz using HSI
+ *
+ * This function configures the system clock @32MHz and voltage scale 1
+ * assuming the registers have their reset value before the call.
+ * - POWER SCALE   = RANGE 1
+ * - SYSTEM CLOCK  = PLL MUL16 DIV2
+ * - PLL SOURCE    = HSI/4
+ * - FLASH LATENCY = 1
+ */
 void MainBoard::ConfigureClock(void)
 {
 	uint32_t tickstart;
@@ -147,7 +185,7 @@ void MainBoard::ConfigureClock(void)
 	tickstart = sysTickCnt;
 	while((RCC->CR & (RCC_CR_HSIRDY | RCC_CR_HSIDIVF)) != (RCC_CR_HSIRDY | RCC_CR_HSIDIVF)){
 		if((sysTickCnt - tickstart) > TIMEOUT_HSI){
-			brdErr = ERR_HSI_Timeout;
+			brdErr = Error::HSI_Timeout;
 			hwLogger.AddEntry(FileID, LOG_CODE_CLOCK, 1);
 			return;
 		}
@@ -160,7 +198,7 @@ void MainBoard::ConfigureClock(void)
 	tickstart = sysTickCnt;
 	while((RCC->CR & RCC_CR_PLLRDY) == 0){
 		if ((sysTickCnt - tickstart) > TIMEOUT_PLL){
-			brdErr = ERR_PLL_Timeout;
+			brdErr = Error::PLL_Timeout;
 			hwLogger.AddEntry(FileID, LOG_CODE_CLOCK, 2);
 			return;
 		}
@@ -172,7 +210,7 @@ void MainBoard::ConfigureClock(void)
 	tickstart = sysTickCnt;
 	while((RCC->CFGR & RCC_CFGR_SWS_PLL) == 0){
 		if((sysTickCnt - tickstart ) > TIMEOUT_CLOCKSWITCH){
-			brdErr = ERR_ClockSwitch_Timeout;
+			brdErr = Error::ClockSwitch_Timeout;
 			hwLogger.AddEntry(FileID, LOG_CODE_CLOCK, 3);
 			return;
 		}
@@ -185,46 +223,60 @@ void MainBoard::ConfigureClock(void)
  *  This function configures all GPIO:
  *     PA8 as input (UserSW), - EXTI8
  *     PA15 as output (UserLED),
- *     PA9 and PA10 for USART1,
  *     PA5, PA6 and PA7 for SPI1
- *     PA4 and PB0 as output for SlaveSelectFlash and SlaveSelectRadio, used with SPI1
- *     PB1 as input (RadioInterrupt) - EXTI1
+ *     the pins required through the BoardDefinition object
  *     the other pins as analog
  */
 void MainBoard::ConfigureGPIO(void)
 {
 	uint32_t val;
 
-	// PA4 (SPI1 NSS) default == 0  (input)
-	// PA13 (SWDIO)   default == 10 (alternate)
-	// PA14 (SWCLK)   default == 10 (alternate)
-	// the others are default == 11 (analog mode)
+	/** Default values
+	 *
+	 * After reset:
+	 * - PA4 (SPI1 NSS) default == 0  (input)
+	 * - PA13 (SWDIO)   default == 10 (alternate)
+	 * - PA14 (SWCLK)   default == 10 (alternate)
+	 * - the others are default == 11 (analog mode)
+	 */
 
 	// Enable peripheral clock of GPIOx
 	RCC->IOPENR |= RCC_IOPENR_GPIOAEN | RCC_IOPENR_GPIOBEN | RCC_IOPENR_GPIOCEN;
 
-	// Configure GPIO pins PA0 - PA3, PA11, PA12 in analog mode
-	val  = GPIO_MODER_MODE0  | GPIO_MODER_MODE1 | GPIO_MODER_MODE2 | GPIO_MODER_MODE3;
-	val |= GPIO_MODER_MODE11 | GPIO_MODER_MODE12;
-	if(!(boardCapabilities & PAx5_BOARD_HW_USART)) {
+	// Configure GPIO pins PA0 - PA2, PA11, PA12 in analog mode
+	val = GPIO_MODER_MODE0 | GPIO_MODER_MODE1 | GPIO_MODER_MODE2 | GPIO_MODER_MODE11 | GPIO_MODER_MODE12;
+	if(!(boardCapabilities.PowerPeripherals_PA3)) {
+		// configure PA3 in analog mode
+		val |= GPIO_MODER_MODE3;
+	}
+	if(!(boardCapabilities.Use_USART)) {
 		// configure USART1 pins, PA9 and PA10, in analog mode
 		val |= GPIO_MODER_MODE9 | GPIO_MODER_MODE10;
 	}
-	if(!(boardCapabilities & PAx5_BOARD_HW_ExtFLASH)) {
-		// configure the pin for selecting external FLASH in analog mode
+	if(!(boardCapabilities.ExtFLASH)) {
+		// configure PA4 in analog mode
 		val |= GPIO_MODER_MODE4;
 	}
 	GPIOA->MODER |= val; // It is OK like this because GPIO_MODER_MODE* are all 1
 
+	// configure peripheral power if needed
+	if(boardCapabilities.PowerPeripherals_PA3){
+		// PA3 (Peripheral power) configured as output push-pull, low speed, value HIGH
+		GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE3)) | GPIO_MODER_MODE3_0;
+		GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_3);
+		GPIOA->OSPEEDR =  GPIOA->OSPEEDR & ~(GPIO_OSPEEDER_OSPEED3);
+		GPIOA->BSRR    =  GPIO_BSRR_BS_3;
+	}
+
 	// Configure GPIO pins PB3 - PB5 as analog pins
 	val = GPIO_MODER_MODE3 | GPIO_MODER_MODE4 | GPIO_MODER_MODE5;
-	if(!(boardCapabilities & PAx5_BOARD_HW_RFM69HW)) {
+	if(!(boardCapabilities.Radio_RFM69HW)) {
 		// configure the pin for selecting the radio module, PB0, in analog mode
 		val |= GPIO_MODER_MODE0;
 		// configure the pin used as interrupt input from radio module, PB1, in analog mode
 		val |= GPIO_MODER_MODE1;
 	}
-	if(!(boardCapabilities & PAx5_BOARD_HW_I2C)) {
+	if(!(boardCapabilities.Use_I2C)) {
 		// Configure I2C1 pins, PB6 and PB7, as analog pins
 		val |= GPIO_MODER_MODE6 | GPIO_MODER_MODE7;
 	}
@@ -251,7 +303,7 @@ void MainBoard::ConfigureGPIO(void)
 	GPIOA->BSRR    = GPIO_BSRR_BS_15;
 
 // ======= USART1 pins
-	if(boardCapabilities & PAx5_BOARD_HW_USART) {
+	if(boardCapabilities.Use_USART) {
 		// PA9 and PA10 configured as alternate function
 		GPIOA->MODER = (GPIOA->MODER & ~(GPIO_MODER_MODE9 | GPIO_MODER_MODE10)) | (GPIO_MODER_MODE9_1 | GPIO_MODER_MODE10_1);
 		// Select the alternate function (AFR[0] is AFRL (pin0-7) and AFR[1] is AFRH (pin8-15))
@@ -260,14 +312,14 @@ void MainBoard::ConfigureGPIO(void)
 	}
 
 // ======= SPI slave select pins
-	if(boardCapabilities & PAx5_BOARD_HW_ExtFLASH) {
+	if(boardCapabilities.ExtFLASH) {
 		// PA4 (SPI_SelMem) configured as output push-pull, high speed, value HIGH
 		GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE4)) | GPIO_MODER_MODE4_0;
 		GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_4);
 		GPIOA->OSPEEDR = (GPIOA->OSPEEDR & ~(GPIO_OSPEEDER_OSPEED4)) | GPIO_OSPEEDER_OSPEED4_1;
 		GPIOA->BSRR    =  GPIO_BSRR_BS_4;
 	}
-	if(boardCapabilities & PAx5_BOARD_HW_RFM69HW) {
+	if(boardCapabilities.Radio_RFM69HW) {
 		// PB0 (SPI_SelRadio) configured as output push-pull, high speed, value HIGH
 		GPIOB->MODER   = (GPIOB->MODER & ~(GPIO_MODER_MODE0)) | GPIO_MODER_MODE0_0;
 		GPIOB->OTYPER  =  GPIOB->OTYPER & ~(GPIO_OTYPER_OT_0);
@@ -281,9 +333,10 @@ void MainBoard::ConfigureGPIO(void)
 	GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_5);
 	GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED5;
 	GPIOA->BSRR    =  GPIO_BSRR_BR_5;
-	// PA6 = SPI1 MISO : Input with pull-up, Very high speed
+	// PA6 = SPI1 MISO : Input with pull-up
 	GPIOA->MODER   =  GPIOA->MODER & ~(GPIO_MODER_MODE6);
-	GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED6;
+	// TODO !!! Check without setting the speed. This should not matter for inputs !
+	//GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED6;
 	GPIOA->PUPDR   = (GPIOA->PUPDR & ~(GPIO_PUPDR_PUPD6)) | GPIO_PUPDR_PUPD6_0;
 	// PA7 = SPI1 MOSI : Output push-pull, Very high speed, value LOW
 	GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE7)) | GPIO_MODER_MODE7_0;
@@ -298,14 +351,14 @@ void MainBoard::ConfigureGPIO(void)
 	GPIOA->AFR[0]  = (GPIOA->AFR[0] & 0x000FFFFF);
 
 // ======= Interrupt pin connected to RFM69
-	if(boardCapabilities & PAx5_BOARD_HW_RFM69HW) {
+	if(boardCapabilities.Radio_RFM69HW) {
 		// PB1 (RadioInterrupt) configured as input with pull-down
 		GPIOB->MODER = GPIOB->MODER & ~(GPIO_MODER_MODE1);
 		GPIOB->PUPDR = (GPIOB->PUPDR & ~(GPIO_PUPDR_PUPD1)) | GPIO_PUPDR_PUPD1_1;
 	}
 
 // ======= I2C pins
-	if(boardCapabilities & PAx5_BOARD_HW_I2C) {
+	if(boardCapabilities.Use_I2C) {
 		// PB6 - PB7 configured as open-drain, high speed, value HIGH and pull-up
 		GPIOB->PUPDR   = (GPIOB->PUPDR & ~(GPIO_PUPDR_PUPD6 | GPIO_PUPDR_PUPD7)) |
 							(GPIO_PUPDR_PUPD6_0 | GPIO_PUPDR_PUPD7_0);
@@ -317,26 +370,6 @@ void MainBoard::ConfigureGPIO(void)
 		GPIOB->AFR[0]  = (GPIOB->AFR[0] & 0x00FFFFFF) | 0x11000000;
 		GPIOB->MODER   = (GPIOB->MODER & ~(GPIO_MODER_MODE6 | GPIO_MODER_MODE7)) |
 							(GPIO_MODER_MODE6_1 | GPIO_MODER_MODE7_1);
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-void MainBoard::InitializeADCInput(uint8_t adcInput)
-{
-	if(adcInput == 0){
-		sADC.Disable();
-
-		// Configure GPIO pins PA0 - PA3 as analog pins, pull-up and pull-down automatically disabled
-		GPIOA->MODER |= GPIO_MODER_MODE0 | GPIO_MODER_MODE1 | GPIO_MODER_MODE2 | GPIO_MODER_MODE3;
-	}
-	else{
-		sADC.Enable();
-
-		if(adcInput & 0x01) GPIOA->MODER |= GPIO_MODER_MODE0;
-		if(adcInput & 0x02) GPIOA->MODER |= GPIO_MODER_MODE1;
-		if(adcInput & 0x04) GPIOA->MODER |= GPIO_MODER_MODE2;
-		if(adcInput & 0x08) GPIOA->MODER |= GPIO_MODER_MODE3;
 	}
 }
 
@@ -390,21 +423,6 @@ void MainBoard::DisableTIM6(void)
 	TIM6->SR   = TIM6->SR & ~(TIM_SR_UIF); // clear flags
 
 	RCC->APB1ENR = RCC->APB1ENR & ~(RCC_APB1ENR_TIM6EN);
-}
-
-// -----------------------------------------------------------------------------
-
-void MainBoard::BlinkError(void){
-	uint8_t errIn;
-
-	errIn = (uint8_t)brdErr;
-
-	sLED.Blink(1000);
-	while(errIn != 0){
-		sLED.Blink(300);
-		--errIn;
-	}
-	sLED.Blink(1000);
 }
 
 // -----------------------------------------------------------------------------

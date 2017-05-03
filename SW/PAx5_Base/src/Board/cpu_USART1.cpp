@@ -19,7 +19,7 @@ CPU_USART1 sUSART;
 
 // -----------------------------------------------------------------------------
 
-#define TIMEOUT_USART_INIT	((uint32_t)1000) // 1 s
+const uint32_t Timeout_USART_Init = 1000U; // 1 s
 
 // -----------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ bool CPU_USART1::Configure(void)
 	// Wait for idle frame Transmission ...
 	uint32_t timeStart = sysTickCnt;
 	while((USART1->ISR & USART_ISR_TC) != USART_ISR_TC){
-		if((sysTickCnt - timeStart) >= TIMEOUT_USART_INIT){
+		if((sysTickCnt - timeStart) >= Timeout_USART_Init){
 			hwLogger.AddEntry(FileID, LOG_CODE_CfgTimeout, 0);
 			return false;
 		}

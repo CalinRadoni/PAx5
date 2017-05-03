@@ -19,10 +19,11 @@ protected:
 
 	uint8_t k1[CMAC_DS], k2[CMAC_DS];
 
-	/** Initialize the keys for signing
+	/**
+	 * \brief Initialize the keys for signing
 	 *
-	 * This function generates the CMAC/OMAC keys.
-	 * It is called from the Sign function.
+	 * \details This function generates the CMAC/OMAC keys.
+	 *          It is called from the Sign function.
 	 */
 	void InitKeys(CryptoContext *ctx);
 
@@ -31,16 +32,17 @@ public:
 
 	Enc_ChaCha20  *chacha;
 
-	/** Sign some data
+	/**
+	 * \brief Sign some data
 	 *
-	 * This function signs the data buffer passed as parameter using the ChaCha20 algorithm.
+	 * \details This function signs the data buffer passed as parameter using the ChaCha20 algorithm.
 	 *
-	 * @warning Do not forget to set ctx->cnonce for signing before calling this function.
+	 * \warning Do not forget to set ctx->cnonce for signing before calling this function.
 	 *
-	 * @param packet Data to be signed
-	 * @param packetLen Length of data to be signed
-	 * @param ctx The crypto context
-	 * @return Return value is in cmac[CMAC_DS].
+	 * \param packet    Data to be signed
+	 * \param packetLen Length of data to be signed
+	 * \param ctx       The crypto context
+	 * \return Return value is in cmac[CMAC_DS].
 	 */
 	void Sign(CryptoContext *ctx, uint8_t* packet, uint8_t packetLen);
 

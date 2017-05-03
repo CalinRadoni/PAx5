@@ -12,7 +12,7 @@ PAW_TimedSlot::PAW_TimedSlot()
 {
 	timeLeft = 0;
 	peerAddress = AddressClass::Address_NONE;
-	state = stateIdle;
+	state = PAW_TS_State::stateIdle;
 	packetNumber = 0;
 }
 
@@ -22,8 +22,8 @@ void PAW_TimedSlot::InitTimeSlot(uint32_t ms, uint32_t clientNonceH, uint32_t cl
 	sessionEncCtx.key[1] = clientNonceL;
 
 	timeLeft = ms;
-	if(timeLeft == 0) state = stateIdle;
-	else              state = stateWaitReqAck;
+	if(timeLeft == 0) state = PAW_TS_State::stateIdle;
+	else              state = PAW_TS_State::stateWaitReqAck;
 
 	packetNumber = 0;
 }
@@ -34,8 +34,8 @@ void PAW_TimedSlot::UpdateTimeSlotReqAck(uint32_t ms, uint32_t serverNonceH, uin
 	sessionEncCtx.key[3] = serverNonceL;
 
 	timeLeft = ms;
-	if(timeLeft == 0) state = stateIdle;
-	else              state = stateHandshakeDone;
+	if(timeLeft == 0) state = PAW_TS_State::stateIdle;
+	else              state = PAW_TS_State::stateHandshakeDone;
 
 	packetNumber = 0;
 }
@@ -43,20 +43,20 @@ void PAW_TimedSlot::UpdateTimeSlotReqAck(uint32_t ms, uint32_t serverNonceH, uin
 void PAW_TimedSlot::UpdateTimeSlotAckWait(uint32_t ms)
 {
 	timeLeft = ms;
-	state = stateWaitAck;
+	state = PAW_TS_State::stateWaitAck;
 }
 
 void PAW_TimedSlot::UpdateTimeSlotAckReceived(uint32_t ms)
 {
 	timeLeft = ms;
-	state = stateAckReceived;
+	state = PAW_TS_State::stateAckReceived;
 }
 
 void PAW_TimedSlot::RestartTimeSlot(uint32_t ms)
 {
 	timeLeft = ms;
 	if(timeLeft == 0)
-		state = stateIdle;
+		state = PAW_TS_State::stateIdle;
 }
 
 void PAW_TimedSlot::DecreaseTime(uint32_t ms)
@@ -64,7 +64,7 @@ void PAW_TimedSlot::DecreaseTime(uint32_t ms)
 	if(ms < timeLeft) timeLeft -= ms;
 	else{
 		timeLeft = 0;
-		state = stateIdle;
+		state = PAW_TS_State::stateIdle;
 	}
 }
 

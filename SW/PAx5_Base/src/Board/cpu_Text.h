@@ -11,9 +11,6 @@ namespace PAx5 {
 
 /** Outputs formatted text to USART */
 class CPU_TextOutput {
-protected:
-	void ConvertAndOutputUtoD(unsigned int d, unsigned int base, unsigned char minLength = 0);
-
 public:
 	CPU_TextOutput();
 	virtual ~CPU_TextOutput();
@@ -45,7 +42,6 @@ public:
 	 * Minimum output length is limited to 255. Other values will overflow.
 	 * Padding is done with '0' for binary and hexadecimal unsigned integer and with space for others.
 	 *
-	 * @example
 	 * @code{.cpp}
 	 * sTextOutput.FormatAndOutputString("Text and numbers: %8b %4d %d 0x%4x %c\r\n", 11, 12, 13, 14, 37);
 	 * @endcode
@@ -58,6 +54,9 @@ public:
 	 */
 	void OutputBuffer(uint8_t*, uint8_t);
 	void OutputBuffer(volatile uint8_t*, uint8_t);
+
+protected:
+	void ConvertAndOutputUtoD(unsigned int d, unsigned int base, unsigned char minLength = 0);
 };
 
 extern CPU_TextOutput sTextOutput;

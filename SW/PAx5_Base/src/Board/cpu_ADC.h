@@ -9,17 +9,14 @@
 
 namespace PAx5 {
 
-#define A0       ((uint8_t)0)
-#define A1       ((uint8_t)1)
-#define A2       ((uint8_t)2)
-#define A3       ((uint8_t)3)
-#define ATemp    ((uint8_t)18)
-#define AVrefInt ((uint8_t)17)
+const uint8_t A0       = 0;
+const uint8_t A1       = 1;
+const uint8_t A2       = 2;
+const uint8_t A3       = 3;
+const uint8_t ATemp    = 18;
+const uint8_t AVrefInt = 17;
 
 class CPU_ADC {
-protected:
-	uint32_t VddA;
-
 public:
 	CPU_ADC();
 
@@ -64,6 +61,9 @@ public:
 	void GetC1(void);
 	void GetC2(void);
 	void GetC3(void);
+
+protected:
+	uint32_t VddA;
 };
 
 extern CPU_ADC sADC;

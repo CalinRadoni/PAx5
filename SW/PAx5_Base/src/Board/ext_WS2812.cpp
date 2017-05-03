@@ -12,7 +12,7 @@ EXT_WS2812 ws2812;
 // -----------------------------------------------------------------------------
 
 EXT_WS2812::EXT_WS2812() {
-	wsPin = wsPIN_PB5;
+	wsPin = WSPinName::PB5;
 	inverted = 1;
 
 	ledCnt = 1;
@@ -34,12 +34,12 @@ void EXT_WS2812::RemapPin(void)
 
 	// Alternate function (AFR[0] is AFRL (pin0-7) and AFR[1] is AFRH (pin8-15))
 	switch(wsPin){
-		case wsPIN_PA12:
+		case WSPinName::PA12:
 			// PA12 configured as alternate function. SPI1 is AF0 (0000) for PA12
 			GPIOA->MODER  = (GPIOA->MODER & ~(GPIO_MODER_MODE12)) | GPIO_MODER_MODE12_1;
 			GPIOA->AFR[1] = (GPIOA->AFR[1] & 0xFFF0FFFF);
 			break;
-		case wsPIN_PB5:
+		case WSPinName::PB5:
 			// PB5 configured as alternate function. SPI1 is AF0 (0000) for PB5
 			GPIOB->MODER  = (GPIOB->MODER & ~(GPIO_MODER_MODE5)) | GPIO_MODER_MODE5_1;
 			GPIOB->AFR[0] = (GPIOB->AFR[0] & 0xFF0FFFFF);
@@ -51,13 +51,13 @@ void EXT_WS2812::RestorePin(void)
 	RCC->IOPENR |= RCC_IOPENR_GPIOAEN | RCC_IOPENR_GPIOBEN;
 
 	switch(wsPin){
-		case wsPIN_PA12:
+		case WSPinName::PA12:
 			// PA12 = Output, value LOW/HIGH
 			GPIOA->MODER = (GPIOA->MODER & ~(GPIO_MODER_MODE12)) | GPIO_MODER_MODE12_0;
 			if(inverted == 0) GPIOA->BSRR  =  GPIO_BSRR_BR_12;
 			else              GPIOA->BSRR  =  GPIO_BSRR_BS_12;
 			break;
-		case wsPIN_PB5:
+		case WSPinName::PB5:
 			// PB5 = Output, value LOW/HIGH
 			GPIOB->MODER = (GPIOB->MODER & ~(GPIO_MODER_MODE5)) | GPIO_MODER_MODE5_0;
 			if(inverted == 0) GPIOB->BSRR  =  GPIO_BSRR_BR_5;
@@ -71,13 +71,13 @@ void EXT_WS2812::RestorePin(void)
 	GPIOA->AFR[0] = (GPIOA->AFR[0] & 0x0FFFFFFF);
 }
 
-void EXT_WS2812::Initialize(uint8_t pinIn)
+void EXT_WS2812::Initialize(WSPinName pinIn)
 {
 	RCC->IOPENR |= RCC_IOPENR_GPIOAEN | RCC_IOPENR_GPIOBEN;
 
 	wsPin = pinIn;
 	switch(wsPin){
-		case wsPIN_PA12:
+		case WSPinName::PA12:
 			// PA12 = Output push-pull, Very high speed, value LOW/HIGH
 			GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE12)) | GPIO_MODER_MODE12_0;
 			GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_12);
@@ -85,7 +85,7 @@ void EXT_WS2812::Initialize(uint8_t pinIn)
 			if(inverted == 0) GPIOA->BSRR = GPIO_BSRR_BR_12;
 			else              GPIOA->BSRR = GPIO_BSRR_BS_12;
 			break;
-		case wsPIN_PB5:
+		case WSPinName::PB5:
 			// PB5 = Output push-pull, Very high speed, value LOW/HIGH
 			GPIOB->MODER   = (GPIOB->MODER & ~(GPIO_MODER_MODE5)) | GPIO_MODER_MODE5_0;
 			GPIOB->OTYPER  =  GPIOB->OTYPER & ~(GPIO_OTYPER_OT_5);
@@ -170,9 +170,11 @@ void EXT_WS2812::AddData(uint32_t lll)
 
 void EXT_WS2812::SendSPIBuffer(void)
 {
+	uint8_t oldClockDivider;
+
 	sSPI.defaultSPISettings = false;
 
-	ocd = sSPI.clockDivider;
+	oldClockDivider = sSPI.clockDivider;
 	sSPI.clockDivider = 2;
 	sSPI.Configure();
 	RemapPin();
@@ -181,10 +183,10 @@ void EXT_WS2812::SendSPIBuffer(void)
 		if(inverted == 0) dataBuf[dataLen++] = 0x00;
 		else              dataBuf[dataLen++] = 0xFF;
 	}
-	sSPI.SendBufferAndWait(dataBuf, dataLen, SPI_SLAVE_NONE);
+	sSPI.SendBufferAndWait(dataBuf, dataLen, SPISlave_None);
 
 	RestorePin();
-	sSPI.clockDivider = ocd;
+	sSPI.clockDivider = oldClockDivider;
 	sSPI.Configure();
 
 	sSPI.defaultSPISettings = true;

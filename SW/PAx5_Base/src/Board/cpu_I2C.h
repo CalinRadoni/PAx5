@@ -9,24 +9,15 @@
 
 namespace PAx5 {
 
-#define I2C_BUFF_LEN 16
+const uint8_t I2CBufferLen = 16;
 
-#define I2C_STATE_OK       0
-#define I2C_STATE_NACK     1
-#define I2C_STATE_IntfErr  2
-#define I2C_STATE_Timeout  4
-#define I2C_STATE_Disabled 8
+const uint8_t I2CStatus_OK       = 0;
+const uint8_t I2CStatus_NACK     = 1;
+const uint8_t I2CStatus_IntfErr  = 2;
+const uint8_t I2CStatus_Timeout  = 4;
+const uint8_t I2CStatus_Disabled = 8;
 
 class CPU_I2C {
-protected:
-	volatile uint8_t buffIdx;
-	uint8_t myAddress;
-	volatile bool masterMode;
-	volatile bool slaveReceiver;
-
-    void (*callbackOnReceive)(uint8_t);
-    void (*callbackOnRequest)(void);
-
 public:
 	CPU_I2C();
 
@@ -34,7 +25,7 @@ public:
 	void EnableAsSlave(uint8_t); // address
 	void Disable(void);
 
-	volatile uint8_t buffer[I2C_BUFF_LEN];
+	volatile uint8_t buffer[I2CBufferLen];
 	volatile uint8_t buffLen;
 	volatile uint8_t status;
 	volatile bool transferDone;
@@ -48,6 +39,15 @@ public:
 	void onRequest(void(*)(void));
 
 	void HandleI2CInt(void);
+
+protected:
+	volatile uint8_t buffIdx;
+	uint8_t myAddress;
+	volatile bool masterMode;
+	volatile bool slaveReceiver;
+
+    void (*callbackOnReceive)(uint8_t);
+    void (*callbackOnRequest)(void);
 };
 
 extern CPU_I2C sI2C;

@@ -9,30 +9,18 @@
 
 namespace PAx5 {
 
-#define ENTROPY_BUFFER_LEN 32
+const uint8_t EntropyBufferLen = 32;
 
 /** @class CPU_Entropy
  *
  * Collects some random values based on clock jitter.
  */
 class CPU_Entropy {
-protected:
-	volatile bool enabled;
-	volatile bool statusLSI;
-
-	volatile uint8_t  collectState;
-	volatile uint16_t cntStart, cntStop, cntVal;
-	volatile uint8_t  buffMask;
-	volatile uint8_t  whVal, whCnt;
-	volatile uint8_t  entropyByte;
-
-	volatile uint8_t buffHead, buffLen;
-
 public:
 	CPU_Entropy();
 	virtual ~CPU_Entropy();
 
-	volatile uint8_t buffer[ENTROPY_BUFFER_LEN];
+	volatile uint8_t buffer[EntropyBufferLen];
 
 	uint8_t BytesAvailable(void);
 	uint8_t Get8bits(void);
@@ -53,7 +41,6 @@ public:
 	 *
 	 * For a single entropy buffer collection there is the function CollectFromTimer.
 	 *
-	 * @example
 	 * @code{.cpp}
 	 * entropy.Enable();
 	 * ...
@@ -91,6 +78,18 @@ public:
 	void Collect(void);
 
 	void HandleTimerInterrupt(void);
+
+protected:
+	volatile bool enabled;
+	volatile bool statusLSI;
+
+	volatile uint8_t  collectState;
+	volatile uint16_t cntStart, cntStop, cntVal;
+	volatile uint8_t  buffMask;
+	volatile uint8_t  whVal, whCnt;
+	volatile uint8_t  entropyByte;
+
+	volatile uint8_t buffHead, buffLen;
 };
 
 extern CPU_Entropy entropy;

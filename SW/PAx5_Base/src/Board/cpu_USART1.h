@@ -9,16 +9,10 @@
 
 namespace PAx5 {
 
-#define U1_RX_BUFF_LEN 64
-#define U1_TX_BUFF_LEN 64
+const uint8_t U1_RX_BUFF_LEN = 64;
+const uint8_t U1_TX_BUFF_LEN = 64;
 
 class CPU_USART1 {
-protected:
-	volatile uint8_t bufferTX[U1_RX_BUFF_LEN];
-	volatile uint8_t buffTxLen;
-	volatile uint8_t buffTxIdx;
-	volatile bool dataSent;
-
 public:
 	CPU_USART1();
 	virtual ~CPU_USART1();
@@ -30,7 +24,15 @@ public:
 
 	volatile bool    intfError;
 
+	/** Initialize this object's state */
 	void Initialize(void);
+
+	/** Configure the USART
+	 *
+	 * This function configure USART1 to 115200 bauds, 8N1, interrupt enabled
+	 *
+	 * Return false if no idle frame is detected within defined timeout.
+	 */
 	bool Configure(void);
 
 	void InitTxData(void);
@@ -43,6 +45,12 @@ public:
 	void ClearRXBuffer(void);
 
 	void HandleInterrupt(void);
+
+protected:
+	volatile uint8_t bufferTX[U1_RX_BUFF_LEN];
+	volatile uint8_t buffTxLen;
+	volatile uint8_t buffTxIdx;
+	volatile bool dataSent;
 };
 
 extern CPU_USART1 sUSART;

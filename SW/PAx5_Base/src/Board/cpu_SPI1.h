@@ -9,17 +9,11 @@
 
 namespace PAx5 {
 
-#define SPI_SLAVE_NONE   0
-#define SPI_SLAVE_Memory 1
-#define SPI_SLAVE_Radio  2
+const uint8_t SPISlave_None   = 0;
+const uint8_t SPISlave_Memory = 1;
+const uint8_t SPISlave_Radio  = 2;
 
 class CPU_SPI1 {
-protected:
-	volatile uint8_t smallBuffer[2];
-
-	volatile uint8_t spiSlave;
-	volatile bool readyToSend;
-
 public:
 	CPU_SPI1();
 	virtual ~CPU_SPI1();
@@ -67,6 +61,12 @@ public:
 	__RAMFUNC void RAM_SendBufferAndWait(volatile uint8_t*, uint16_t, uint8_t);
 
 	void HandleDMAInt(void);
+
+protected:
+	volatile uint8_t smallBuffer[2];
+
+	volatile uint8_t spiSlave;
+	volatile bool readyToSend;
 };
 
 extern CPU_SPI1 sSPI;

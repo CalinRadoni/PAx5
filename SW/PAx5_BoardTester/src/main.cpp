@@ -12,11 +12,13 @@ PAx5::BoardTester tester;
 
 int main(void)
 {
-	uint32_t boardCapabilities;
+	PAx5::BoardDefinion boardDefinition;
+	boardDefinition.SetByType(PAx5::BoardDefinion::BoardType::PAx5_BaseBoard);
 
-	boardCapabilities = PAx5_BOARD_HW_USART | PAx5_BOARD_HW_I2C | PAx5_BOARD_HW_RFM69HW | PAx5_BOARD_HW_ExtFLASH;
-
-	PAx5::board.InitializeBoard(boardCapabilities);
+	if(PAx5::board.InitializeBoard(boardDefinition) != PAx5::MainBoard::Error::OK){
+		PAx5::board.BlinkError();
+		while(1){ /* infinite loop */ }
+	}
 
 	PAx5::sLED.Blink(300);
 	PAx5::sLED.Blink(300);

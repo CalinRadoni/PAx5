@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------------
 
 #include "dev_RFM69.h"
+#include "dev_RFM69_Regs.h"
 
 namespace PAx5 {
 // -----------------------------------------------------------------------------
@@ -171,12 +172,26 @@ DEV_RFM69::~DEV_RFM69() {
 
 uint8_t DEV_RFM69::ReadRegister(uint8_t reg)
 {
-	return sSPI.SendCmdPlusAndWait(reg & 0x7F, 0, SPI_SLAVE_Radio);
+	return sSPI.SendCmdPlusAndWait(reg & 0x7F, 0, SPISlave_Radio);
 }
 
 void DEV_RFM69::WriteRegister(uint8_t reg, uint8_t data)
 {
-	sSPI.SendCmdPlusAndWait(reg | 0x80, data, SPI_SLAVE_Radio);
+	sSPI.SendCmdPlusAndWait(reg | 0x80, data, SPISlave_Radio);
+}
+
+// -----------------------------------------------------------------------------
+
+uint8_t DEV_RFM69::GetModuleVersion(void)
+{
+	return ReadRegister(RFM69_RegVersion);
+}
+
+uint8_t DEV_RFM69::TestSyncRegister(uint8_t syncRegNo, uint8_t val)
+{
+	uint8_t reg = RFM69_RegSyncValue1 + (syncRegNo & 0x03);
+	WriteRegister(reg, val);
+	return ReadRegister(reg);
 }
 
 // -----------------------------------------------------------------------------
@@ -279,7 +294,7 @@ void DEV_RFM69::Initialize(void)
 	WriteRegister(RFM69_RegSyncValue4,    SYNCW3);
 #endif
 
-	WriteRegister(RFM69_RegPayloadLength, RFM69_FIFO_SIZE); // for packet mode: max length in Rx, not used in Tx
+	WriteRegister(RFM69_RegPayloadLength, RFM69_FIFO_Size); // for packet mode: max length in Rx, not used in Tx
 	WriteRegister(RFM69_RegFifoThresh,    0x8F); // TxStartCondition = FifoNotEmpty
 	WriteRegister(RFM69_RegTestPa1,       0x55); // default, make sure NO +20dBm
 	WriteRegister(RFM69_RegTestPa2,       0x70); // default, make sure NO +20dBm
@@ -505,11 +520,11 @@ void DEV_RFM69::ReadFIFO(void)
 	uint8_t val;
 
 	val = ReadRegister(RFM69_RegFifo);
-	if(val > RFM69_MAX_MSG_LEN) val = RFM69_MAX_MSG_LEN;
+	if(val > RFM69_MaxMsgLen) val = RFM69_MaxMsgLen;
 	packetReceivedLen = val;
 
 	radioBuffer[1] = RFM69_RegFifo & 0x7F;
-	sSPI.SendBufferAndWait(&radioBuffer[1], packetReceivedLen + 1, SPI_SLAVE_Radio);
+	sSPI.SendBufferAndWait(&radioBuffer[1], packetReceivedLen + 1, SPISlave_Radio);
 
 	if(changePacketLength)
 		radioBuffer[RFM69_RadioBufferOffset]++;
@@ -519,7 +534,7 @@ bool DEV_RFM69::SendMessage(uint8_t lenIn)
 {
 	packetReceived = false;
 
-	if(lenIn > RFM69_MAX_MSG_LEN) return false;
+	if(lenIn > RFM69_MaxMsgLen) return false;
 
 	if(radioMode == RM_TX)
 		SetMode(switchTX2FS ? RM_FS : RM_StandBy);
@@ -531,7 +546,7 @@ bool DEV_RFM69::SendMessage(uint8_t lenIn)
 
 	radioBuffer[0] = RFM69_RegFifo | 0x80;
 	radioBuffer[1] = lenIn;
-	sSPI.SendBufferAndWait(radioBuffer, lenIn + RFM69_RadioBufferOffset, SPI_SLAVE_Radio);
+	sSPI.SendBufferAndWait(radioBuffer, lenIn + RFM69_RadioBufferOffset, SPISlave_Radio);
 
 	packetSent = false;
 	SetMode(RM_TX);
@@ -542,7 +557,7 @@ bool DEV_RFM69::SendMessage(uint8_t *dataIn, uint8_t lenIn)
 {
 	if(dataIn == NULL) return true;
 
-	if(lenIn > RFM69_MAX_MSG_LEN) return false;
+	if(lenIn > RFM69_MaxMsgLen) return false;
 
 	if(waitTimeForFreeAir != 0){
 		if(!WaitForFreeAir())
@@ -560,7 +575,7 @@ bool DEV_RFM69::SendMessage(uint8_t *dataIn, uint8_t lenIn)
 
 	dataIn[0] = RFM69_RegFifo | 0x80;
 	dataIn[1] = lenIn;
-	sSPI.SendBufferAndWait(dataIn, lenIn + RFM69_RadioBufferOffset, SPI_SLAVE_Radio);
+	sSPI.SendBufferAndWait(dataIn, lenIn + RFM69_RadioBufferOffset, SPISlave_Radio);
 
 	packetSent = false;
 	SetMode(RM_TX);

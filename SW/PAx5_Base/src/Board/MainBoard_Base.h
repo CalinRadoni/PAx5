@@ -22,22 +22,16 @@ namespace PAx5 {
 
 // -----------------------------------------------------------------------------
 
-#define PAx5_BOARD_HW_USART        ((uint32_t)0x00000001)    ///< Use USART1
-#define PAx5_BOARD_HW_I2C          ((uint32_t)0x00000002)    ///< Use I2C (master or slave)
-#define PAx5_BOARD_HW_ExtFLASH     ((uint32_t)0x01000000)    ///< External FLASH present
-#define PAx5_BOARD_HW_RFM69HW      ((uint32_t)0x02000000)    ///< RFM69HW module present
-
-// -----------------------------------------------------------------------------
-
-/**
- * sysTickCnt is incremented every milisecond by
- * the SysTick_Handler interrupt handler
- */
+/** sysTickCnt is incremented every millisecond by the SysTick_Handler interrupt handler */
 extern volatile uint32_t sysTickCnt;
 
 // -----------------------------------------------------------------------------
 
-/** A very basic delay function */
+/**
+ * \brief A very basic, blocking, delay function
+ * \param ms The number of milliseconds to wait
+ * \warning This function needs the SysTick interrupt to be enabled !
+ */
 void Delay(uint32_t ms);
 
 // -----------------------------------------------------------------------------

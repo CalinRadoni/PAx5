@@ -34,7 +34,7 @@ void CPU_SPI1::Initialize(void)
 {
 	transferDone = true;
 	intfError    = false;
-	spiSlave     = SPI_SLAVE_NONE;
+	spiSlave     = SPISlave_None;
 	readyToSend  = false;
 
 	clockDivider = 4;
@@ -104,10 +104,10 @@ void CPU_SPI1::SendCommandAndWait(uint8_t cmd, uint8_t slaveIn)
 
 	spiSlave = slaveIn;
 	switch(spiSlave){
-		case SPI_SLAVE_Memory:
+		case SPISlave_Memory:
 			GPIOA->BSRR = GPIO_BSRR_BR_4;	// select memory
 			break;
-		case SPI_SLAVE_Radio:
+		case SPISlave_Radio:
 			GPIOB->BSRR = GPIO_BSRR_BR_0;	// select radio
 			break;
 		default:
@@ -147,10 +147,10 @@ uint8_t CPU_SPI1::SendCmdPlusAndWait(uint8_t cmd, uint8_t data, uint8_t slaveIn)
 
 	spiSlave = slaveIn;
 	switch(spiSlave){
-		case SPI_SLAVE_Memory:
+		case SPISlave_Memory:
 			GPIOA->BSRR = GPIO_BSRR_BR_4;	// select memory
 			break;
-		case SPI_SLAVE_Radio:
+		case SPISlave_Radio:
 			GPIOB->BSRR = GPIO_BSRR_BR_0;	// select radio
 			break;
 		default:
@@ -199,10 +199,10 @@ void CPU_SPI1::SendBufferAndWait(volatile uint8_t* inputBuffer, uint16_t inputBu
 
 	spiSlave = slaveIn;
 	switch(spiSlave){
-		case SPI_SLAVE_Memory:
+		case SPISlave_Memory:
 			GPIOA->BSRR = GPIO_BSRR_BR_4;	// select memory
 			break;
-		case SPI_SLAVE_Radio:
+		case SPISlave_Radio:
 			GPIOB->BSRR = GPIO_BSRR_BR_0;	// select radio
 			break;
 		default:
@@ -268,10 +268,10 @@ __RAMFUNC uint8_t CPU_SPI1::RAM_SendCmdPlusAndWait(uint8_t cmd, uint8_t data, ui
 	// select slave
 	spiSlave = slaveIn;
 	switch(spiSlave){
-		case SPI_SLAVE_Memory:
+		case SPISlave_Memory:
 			GPIOA->BSRR = GPIO_BSRR_BR_4;	// select memory
 			break;
-		case SPI_SLAVE_Radio:
+		case SPISlave_Radio:
 			GPIOB->BSRR = GPIO_BSRR_BR_0;	// select radio
 			break;
 		default:
@@ -297,10 +297,10 @@ __RAMFUNC uint8_t CPU_SPI1::RAM_SendCmdPlusAndWait(uint8_t cmd, uint8_t data, ui
 
 	// deselect slave
 	switch(spiSlave){
-		case SPI_SLAVE_Memory:
+		case SPISlave_Memory:
 			GPIOA->BSRR = GPIO_BSRR_BS_4; // deselect memory
 			break;
-		case SPI_SLAVE_Radio:
+		case SPISlave_Radio:
 			GPIOB->BSRR = GPIO_BSRR_BS_0; // deselect radio
 			break;
 		default:
@@ -329,10 +329,10 @@ __RAMFUNC void CPU_SPI1::RAM_SendBufferAndWait(volatile uint8_t* inputBuffer, ui
 	// select slave
 	spiSlave = slaveIn;
 	switch(spiSlave){
-		case SPI_SLAVE_Memory:
+		case SPISlave_Memory:
 			GPIOA->BSRR = GPIO_BSRR_BR_4;	// select memory
 			break;
-		case SPI_SLAVE_Radio:
+		case SPISlave_Radio:
 			GPIOB->BSRR = GPIO_BSRR_BR_0;	// select radio
 			break;
 		default:
@@ -358,10 +358,10 @@ __RAMFUNC void CPU_SPI1::RAM_SendBufferAndWait(volatile uint8_t* inputBuffer, ui
 
 	// deselect slave
 	switch(spiSlave){
-		case SPI_SLAVE_Memory:
+		case SPISlave_Memory:
 			GPIOA->BSRR = GPIO_BSRR_BS_4; // deselect memory
 			break;
-		case SPI_SLAVE_Radio:
+		case SPISlave_Radio:
 			GPIOB->BSRR = GPIO_BSRR_BS_0; // deselect radio
 			break;
 		default:
@@ -381,10 +381,10 @@ void CPU_SPI1::HandleDMAInt(void)
 		while((SPI1->SR & SPI_SR_BSY) == SPI_SR_BSY){} // wait for SPI to finish
 
 		switch(spiSlave){
-			case SPI_SLAVE_Memory:
+			case SPISlave_Memory:
 				GPIOA->BSRR = GPIO_BSRR_BS_4; // deselect memory
 				break;
-			case SPI_SLAVE_Radio:
+			case SPISlave_Radio:
 				GPIOB->BSRR = GPIO_BSRR_BS_0; // deselect radio
 				break;
 			default:

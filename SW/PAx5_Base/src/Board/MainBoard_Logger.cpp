@@ -30,7 +30,7 @@ MainBoardLogger::MainBoardLogger() {
 // -----------------------------------------------------------------------------
 
 void MainBoardLogger::Initialize(void) {
-	for(uint8_t i = 0; i < MAX_LOG_SIZE; i++){
+	for(uint8_t i = 0; i < MaxLogSize; i++){
 		List[i].time   = 0;
 		List[i].source = 0;
 		List[i].code   = 0;
@@ -45,7 +45,7 @@ void MainBoardLogger::AddEntry(uint8_t source, uint8_t code, uint16_t data) {
 	List[ListIdx].code   = code;
 	List[ListIdx].data   = data;
 	ListIdx++;
-	if(ListIdx >= MAX_LOG_SIZE)
+	if(ListIdx >= MaxLogSize)
 		ListIdx = 0;
 }
 

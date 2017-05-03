@@ -44,7 +44,7 @@ uint8_t CPU_Entropy::Get8bits(void)
 
 	val = buffer[buffHead];
 	buffLen--;
-	buffHead = (buffHead + 1) % ENTROPY_BUFFER_LEN;
+	buffHead = (buffHead + 1) % EntropyBufferLen;
 
 	if(pMask == 0) __enable_irq();
 
@@ -64,13 +64,13 @@ uint32_t CPU_Entropy::Get32bits(void)
 	uint32_t pMask = __get_PRIMASK();
 	__disable_irq();
 
-	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % ENTROPY_BUFFER_LEN;
+	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % EntropyBufferLen;
 	res  = val; res = res << 8;
-	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % ENTROPY_BUFFER_LEN;
+	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % EntropyBufferLen;
 	res |= val; res = res << 8;
-	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % ENTROPY_BUFFER_LEN;
+	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % EntropyBufferLen;
 	res |= val; res = res << 8;
-	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % ENTROPY_BUFFER_LEN;
+	val = buffer[buffHead]; buffLen--; buffHead = (buffHead + 1) % EntropyBufferLen;
 	res |= val;
 
 	if(pMask == 0) __enable_irq();
@@ -238,18 +238,18 @@ void CPU_Entropy::HandleTimerInterrupt(void)
 				if(buffMask == 0){
 					// all bits of the current byte are set
 
-					if(buffLen >= ENTROPY_BUFFER_LEN){
+					if(buffLen >= EntropyBufferLen){
 						// overflow, overwrite oldest value
-						buffLen = ENTROPY_BUFFER_LEN - 1;
-						buffHead = (buffHead + 1) % ENTROPY_BUFFER_LEN;
+						buffLen = EntropyBufferLen - 1;
+						buffHead = (buffHead + 1) % EntropyBufferLen;
 					}
 
 					// store current byte
-					wIdx = (buffHead + buffLen) % ENTROPY_BUFFER_LEN;
+					wIdx = (buffHead + buffLen) % EntropyBufferLen;
 					buffer[wIdx] = entropyByte;
 
 					buffLen++;
-					if(buffLen == ENTROPY_BUFFER_LEN){
+					if(buffLen == EntropyBufferLen){
 						// buffer is full, stop collection
 						CollectStop();
 						newState = 0xFF;

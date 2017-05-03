@@ -16,13 +16,13 @@ FILEID(8)
 // -----------------------------------------------------------------------------
 
 #ifdef STM32L051xx
-	#define FLASH_PEKEY1  0x89ABCDEF
-	#define FLASH_PEKEY2  0x02030405
+	const uint32_t FLASH_PEKEY1 = 0x89ABCDEFU;
+	const uint32_t FLASH_PEKEY2 = 0x02030405U;
 
-	#define EEPROM_BASE_ADDR 0x08080000
-	#define EEPROM_SIZE 2048
+	const uint32_t EEPROM_BaseAddress = 0x08080000U;
+	const uint32_t EEPROM_Size = 2048U;
 #else
-	#error "Define FLASH_PEKEY, EEPROM_BASE_ADDR and EEPROM_SIZE for your processor !"
+	#error "Define FLASH_PEKEYx, EEPROM_BaseAddress and EEPROM_Size for your processor !"
 #endif
 
 CPU_MemoryEEPROM sMemEEPROM;
@@ -69,7 +69,7 @@ bool CPU_MemoryEEPROM::Write32(uint32_t userAddr, uint32_t val)
 	uint32_t address;
 	bool res;
 
-	if(userAddr >= EEPROM_SIZE) return false;
+	if(userAddr >= EEPROM_Size) return false;
 
 	// no FLASH interrupts, and erase if needed
 	FLASH->PECR &= ~(FLASH_PECR_EOPIE | FLASH_PECR_ERRIE | FLASH_PECR_FIX);
@@ -81,7 +81,7 @@ bool CPU_MemoryEEPROM::Write32(uint32_t userAddr, uint32_t val)
 				FLASH_SR_SIZERR | FLASH_SR_PGAERR | FLASH_SR_WRPERR | FLASH_SR_EOP;
 
 	// the actual write
-	address = EEPROM_BASE_ADDR + (userAddr & 0xFFFFFFFC);
+	address = EEPROM_BaseAddress + (userAddr & 0xFFFFFFFC);
 	*(__IO uint32_t*)address = val;
 
 	// wait for operation to finish
@@ -108,7 +108,7 @@ uint32_t CPU_MemoryEEPROM::Read32(uint32_t userAddr)
 {
 	uint32_t address, val;
 
-	address = EEPROM_BASE_ADDR + (userAddr & 0xFFFFFFFC);
+	address = EEPROM_BaseAddress + (userAddr & 0xFFFFFFFC);
 	val = *(__IO uint32_t*)address;
 	return val;
 }

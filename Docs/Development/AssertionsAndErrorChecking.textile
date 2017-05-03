@@ -6,7 +6,7 @@ h2. MainBoard_Logger
 
 The ASSERT macro is defined in _MainBoard_Logger.h_ as:
 
-bc. 
+bc.
 #define ASSERT(expr) \
     if (expr) \
         {} \
@@ -16,7 +16,7 @@ bc.
 Also, in the _MainBoard_Logger.h_ file, a macro is defined to ensure that any file can call ASSERT with a unique file ID.
 The definition is:
 
-bc. 
+bc.
 #define FILEID(id) \
 	const uint8_t FileID = id; \
     void AssertFileID##id(void) {}
@@ -26,7 +26,7 @@ The *AssertFileID##id* function ensure that each file will have a unique ID. If 
 
 The definition of the _assertionFailed_ function, located in _MainBoard_Logger.cpp_ is:
 
-bc. 
+bc.
 void assertionFailed(const uint8_t FileID, uint16_t assertLine)
 {
 	hwLogger.AddEntry(FileID, 0, assertLine);
@@ -38,7 +38,7 @@ h2. Generic .cpp source files
 
 To use the *ASSERT* macro or *PAx5::hwLogger* define the file ID at the top of  _.cpp_ file and the specific log codes, if any.
 
-bc. 
+bc.
 FILEID(unique_8bit_ID)
 #define LOG_CODE_onething     1 // data = ...
 #define LOG_CODE_anotherthing 2 // data = ...
@@ -48,7 +48,7 @@ To use *hwLogger* call it like @hwLogger.AddEntry(FileID, LOG_CODE_..., specific
 
 h3. References
 
-The *ASSERT* macro and unique file ID usage was adapted from:  
+The *ASSERT* macro and unique file ID usage was adapted from:
 "How to Define Your Own assert() Macro for Embedded Systems":http://barrgroup.com/Embedded-Systems/How-To/Define-Assert-Macro
 
 h2. Log codes
@@ -96,3 +96,5 @@ h3. FileID = 9 cpu_MemoryFLASH
 *3* LOG_CODE_EraseSR, recorded after LOG_CODE_EraseUA, @data = (uint16_t)(FLASH->SR >> 2)@
 *4* LOG_CODE_WriteUA, half-page write failed, @data = half-page address@
 *5* LOG_CODE_WriteSR, recorded after LOG_CODE_WriteUA, @data = (uint16_t)(FLASH->SR >> 2)@
+
+h3. FileID = 10 cpu_GPIO
