@@ -5,7 +5,7 @@
 #include <version.h>
 #include "Node_Config.h"
 #include "cpu_MemoryEEPROM.h"
-#include "PAW_Defines.h"
+#include "CommDefines.h"
 
 namespace PAx5Node {
 

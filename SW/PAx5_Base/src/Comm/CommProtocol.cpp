@@ -2,7 +2,7 @@
  * created 2016.07.03 by Calin Radoni
  */
 
-#include "PAW_CommProtocol.h"
+#include <CommProtocol.h>
 
 #include <cpu_Entropy.h>
 
@@ -10,7 +10,7 @@ namespace PAx5CommProtocol {
 
 // -----------------------------------------------------------------------------
 
-PAW_CommProtocol::PAW_CommProtocol()
+CommProtocol::CommProtocol()
 {
 	cmac.chacha = &chacha;
 
@@ -25,7 +25,7 @@ PAW_CommProtocol::PAW_CommProtocol()
 
 // -----------------------------------------------------------------------------
 
-bool PAW_CommProtocol::CompareHashInConstantTime(uint8_t hashStartIdx)
+bool CommProtocol::CompareHashInConstantTime(uint8_t hashStartIdx)
 {
 	uint8_t i, idx;
 	uint8_t res;
@@ -39,7 +39,7 @@ bool PAW_CommProtocol::CompareHashInConstantTime(uint8_t hashStartIdx)
 
 // -----------------------------------------------------------------------------
 
-uint32_t PAW_CommProtocol::BP2DW(uint8_t* in)
+uint32_t CommProtocol::BP2DW(uint8_t* in)
 {
 	if(in == NULL) return 0;
 
@@ -54,7 +54,7 @@ uint32_t PAW_CommProtocol::BP2DW(uint8_t* in)
 	return val;
 }
 
-void PAW_CommProtocol::DW2BP(uint32_t val32, uint8_t* out)
+void CommProtocol::DW2BP(uint32_t val32, uint8_t* out)
 {
 	if(out == NULL) return;
 
@@ -68,14 +68,14 @@ void PAW_CommProtocol::DW2BP(uint32_t val32, uint8_t* out)
 
 // -----------------------------------------------------------------------------
 
-void PAW_CommProtocol::GetNewSessionID(void)
+void CommProtocol::GetNewSessionID(void)
 {
 	currentSessionID++;
 	if(currentSessionID == 0)
 		currentSessionID++;
 }
 
-void PAW_CommProtocol::NewNonce(void)
+void CommProtocol::NewNonce(void)
 {
 	currentNonce[0]++;
 	if(currentNonce[0] == 0){
@@ -87,7 +87,7 @@ void PAW_CommProtocol::NewNonce(void)
 
 // -----------------------------------------------------------------------------
 
-void PAW_CommProtocol::SetDefaultKey(CryptoContext* ctx)
+void CommProtocol::SetDefaultKey(CryptoContext* ctx)
 {
 	if(ctx == NULL) return;
 
@@ -101,7 +101,7 @@ void PAW_CommProtocol::SetDefaultKey(CryptoContext* ctx)
 
 // -----------------------------------------------------------------------------
 
-void PAW_CommProtocol::Initialize(uint8_t thisNodeAddress)
+void CommProtocol::Initialize(uint8_t thisNodeAddress)
 {
 	currentSessionID = PAx5::entropy.Get32bits();
 	currentNonce[0]  = PAx5::entropy.Get32bits();
@@ -111,7 +111,7 @@ void PAW_CommProtocol::Initialize(uint8_t thisNodeAddress)
 	nodeAddress = thisNodeAddress;
 }
 
-void PAW_CommProtocol::CreateSessionKey(PAW_TimedSlot* ts)
+void CommProtocol::CreateSessionKey(TimedSlot* ts)
 {
 	if(ts == NULL) return;
 
@@ -121,7 +121,7 @@ void PAW_CommProtocol::CreateSessionKey(PAW_TimedSlot* ts)
 	// FIXME PAW_CommProtocol::CreateSessionKey rebuild this function
 }
 
-void PAW_CommProtocol::BuildPacketHeader(CryptoContext* ctx, uint8_t dst, uint8_t flags, uint8_t dataLength, uint32_t sessionID)
+void CommProtocol::BuildPacketHeader(CryptoContext* ctx, uint8_t dst, uint8_t flags, uint8_t dataLength, uint32_t sessionID)
 {
 	if(ctx == NULL) return;
 
@@ -147,7 +147,7 @@ void PAW_CommProtocol::BuildPacketHeader(CryptoContext* ctx, uint8_t dst, uint8_
 
 // -----------------------------------------------------------------------------
 
-void PAW_CommProtocol::CreateRequestPacket(PAW_TimedSlot* ts, CryptoContext* ctx)
+void CommProtocol::CreateRequestPacket(TimedSlot* ts, CryptoContext* ctx)
 {
 	uint32_t randValH, randValL;
 
@@ -175,7 +175,7 @@ void PAW_CommProtocol::CreateRequestPacket(PAW_TimedSlot* ts, CryptoContext* ctx
 	EncryptAndSign(ctx);
 }
 
-void PAW_CommProtocol::CreateReqAckPacket(PAW_TimedSlot* ts, CryptoContext* ctx)
+void CommProtocol::CreateReqAckPacket(TimedSlot* ts, CryptoContext* ctx)
 {
 	uint32_t randValH, randValL;
 
@@ -201,7 +201,7 @@ void PAW_CommProtocol::CreateReqAckPacket(PAW_TimedSlot* ts, CryptoContext* ctx)
 	EncryptAndSign(ctx);
 }
 
-void PAW_CommProtocol::CreateAckPacket(PAW_TimedSlot* ts, uint8_t payloadLength)
+void CommProtocol::CreateAckPacket(TimedSlot* ts, uint8_t payloadLength)
 {
 	if(ts == NULL) return;
 
@@ -210,7 +210,7 @@ void PAW_CommProtocol::CreateAckPacket(PAW_TimedSlot* ts, uint8_t payloadLength)
 	EncryptAndSign(&(ts->sessionEncCtx));
 }
 
-void PAW_CommProtocol::CreateDataPacket(PAW_TimedSlot* ts, uint8_t payloadLength, bool lastPacket)
+void CommProtocol::CreateDataPacket(TimedSlot* ts, uint8_t payloadLength, bool lastPacket)
 {
 	uint8_t outFlags;
 
@@ -225,7 +225,7 @@ void PAW_CommProtocol::CreateDataPacket(PAW_TimedSlot* ts, uint8_t payloadLength
 
 // -----------------------------------------------------------------------------
 
-PAW_ChkAddr::CheckAddrResult PAW_CommProtocol::CheckAddresses(void)
+PAW_ChkAddr::CheckAddrResult CommProtocol::CheckAddresses(void)
 {
 	if(packetRX[CP_PACKET_HDR_SrcAddr_POS] == AddressClass::Address_NONE){
 		if(packetRX[CP_PACKET_HDR_DstAddr_POS] == AddressClass::Address_Gateway)
@@ -245,7 +245,7 @@ PAW_ChkAddr::CheckAddrResult PAW_CommProtocol::CheckAddresses(void)
 
 // -----------------------------------------------------------------------------
 
-void PAW_CommProtocol::EncryptAndSign(CryptoContext* ctx)
+void CommProtocol::EncryptAndSign(CryptoContext* ctx)
 {
 	uint8_t i, idx, dataLen;
 
@@ -273,7 +273,7 @@ void PAW_CommProtocol::EncryptAndSign(CryptoContext* ctx)
 
 // -----------------------------------------------------------------------------
 
-bool PAW_CommProtocol::CheckSignatureAndDecrypt(CryptoContext* ctx)
+bool CommProtocol::CheckSignatureAndDecrypt(CryptoContext* ctx)
 {
 	uint32_t dataLen;
 

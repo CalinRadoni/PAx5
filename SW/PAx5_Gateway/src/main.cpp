@@ -2,22 +2,21 @@
  * created 2016.11.26 by Calin Radoni
  */
 
+#include <NetWorker.h>
 #include "version.h"
 #include "GW_Config.h"
 #include "MainBoard.h"
 #include "dev_LED.h"
 #include "cpu_Entropy.h"
 #include "dev_RFM69.h"
-#include "PAW_NetWorker.h"
-
 #include "cpu_Text.h"
 
 // -----------------------------------------------------------------------------
 
 PAx5Gateway::GW_Config gatewayConfiguration;
-PAx5CommProtocol::PAW_NetWorker gateProtocol;
-PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult chkRes;
-PAx5CommProtocol::PAW_TimedSlot *nodeTS;
+PAx5CommProtocol::NetWorker gateProtocol;
+PAx5CommProtocol::NetWorker::RXCheck chkRes;
+PAx5CommProtocol::TimedSlot *nodeTS;
 
 // -----------------------------------------------------------------------------
 
@@ -84,7 +83,7 @@ int main(void)
 			chkRes = gateProtocol.CheckReceivedPacket();
 			PAx5::sTextOutput.FormatAndOutputString("rx: %d\r\n", (uint8_t)chkRes); PAx5::sTextOutput.Flush();
 			switch(chkRes){
-			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::PacketOK:
+			case PAx5CommProtocol::NetWorker::RXCheck::PacketOK:
 				/* Received a data packet
 				 * The communication slot is netWorker.dataPeer
 				 * The data is in netWorker.commProtocol.packetRX[CP_PACKET_HEADER_LEN]
@@ -113,18 +112,18 @@ int main(void)
 				gateProtocol.dataPeer->RestartTimeSlot(0);
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_ReqAckReceived:
+			case PAx5CommProtocol::NetWorker::RXCheck::ReqAckReceived:
 				/* REQ+ACK received, start sending data */
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_AckReceived:
+			case PAx5CommProtocol::NetWorker::RXCheck::AckReceived:
 				/* ACK received, continue sending data or close the timeslot if done */
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_AddrRequest:
+			case PAx5CommProtocol::NetWorker::RXCheck::AddrRequest:
 				break;
 
-			case PAx5CommProtocol::PAW_NetWorker::PAW_RXCheckResult::chk_Bcast:
+			case PAx5CommProtocol::NetWorker::RXCheck::Bcast:
 				break;
 
 			default:

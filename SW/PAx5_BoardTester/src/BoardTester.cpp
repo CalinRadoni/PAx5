@@ -26,7 +26,7 @@
 
 #include "Enc_ChaCha20.h"
 
-#include "PAW_CommProtocol.h"
+#include "CommProtocol.h"
 
 namespace PAx5 {
 // -----------------------------------------------------------------------------
@@ -917,7 +917,7 @@ void BoardTester::TestCRC(void)
 
 void BoardTester::TestPAWPackets(void)
 {
-	PAx5CommProtocol::PAW_CommProtocol pawc;
+	PAx5CommProtocol::CommProtocol pawc;
 	PAx5CommProtocol::CryptoContext encCtx;
 	uint8_t i, dataLen;
 	bool res;

@@ -2,8 +2,8 @@
  * created 2016.07.26 by Calin Radoni
  */
 
-#ifndef PAW_DEFINES_H_
-#define PAW_DEFINES_H_
+#ifndef COMM_DEFINES_H_
+#define COMM_DEFINES_H_
 
 #include <stddef.h>
 #include <stdint.h>

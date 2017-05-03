@@ -2,14 +2,14 @@
  * created 2016.07.03 by Calin Radoni
  */
 
-#ifndef PAW_COMMPROTOCOL_H_
-#define PAW_COMMPROTOCOL_H_
+#ifndef COMMPROTOCOL_H_
+#define COMMPROTOCOL_H_
 
-#include <PAW_Defines.h>
+#include <CommDefines.h>
 #include <Enc_ChaCha20.h>
 #include <CMAC_ChaCha20.h>
 
-#include <PAW_TimedSlot.h>
+#include <TimedSlot.h>
 
 namespace PAx5CommProtocol {
 
@@ -72,9 +72,9 @@ namespace PAW_ChkAddr {
  * - AuthHash	      CP_PACKET_HASH_LEN bytes
  */
 
-class PAW_CommProtocol {
+class CommProtocol {
 public:
-	PAW_CommProtocol();
+	CommProtocol();
 
 	/** @brief Buffers for input and output data packets */
 	uint8_t packetIn[CP_PACKET_MAX_LEN + CP_PACKET_RAW_OFFSET];
@@ -94,7 +94,7 @@ public:
 	 * Using client and server nonces it generates a session key in `serverSlot.sessionEncCtx`
 	 * A nonce for communication is set in `serverSlot.sessionEncCtx`
 	 */
-	void CreateSessionKey(PAW_TimedSlot*);
+	void CreateSessionKey(TimedSlot*);
 
 
 	/** @brief Build the header in packetOut
@@ -114,7 +114,7 @@ public:
 	 * Generates a new session ID and store it in _ts_
 	 * Initialize _ts_ with CP_TIME_WAIT_REQACK
 	 */
-	void CreateRequestPacket(PAW_TimedSlot* ts, CryptoContext* ctx);
+	void CreateRequestPacket(TimedSlot* ts, CryptoContext* ctx);
 
 	/** @brief Creates a request+acknowledge packet
 	 *
@@ -122,21 +122,21 @@ public:
 	 *
 	 * Update _ts_ to CP_TIME_WAIT_REQACK
 	 */
-	void CreateReqAckPacket(PAW_TimedSlot* ts, CryptoContext* ctx);
+	void CreateReqAckPacket(TimedSlot* ts, CryptoContext* ctx);
 
 	/** @brief Creates an acknowledge packet
 	 *
 	 * Requires: ts->peerAddress and ts~SetSessionID
 	 * Set the packet's payload before calling this function !
 	 */
-	void CreateAckPacket(PAW_TimedSlot* ts, uint8_t payloadLength);
+	void CreateAckPacket(TimedSlot* ts, uint8_t payloadLength);
 
 	/** @brief Creates an acknowledge packet
 	 *
 	 * Requires: ts->peerAddress and ts~SetSessionID
 	 * Set the packet's payload before calling this function !
 	 */
-	void CreateDataPacket(PAW_TimedSlot* ts, uint8_t payloadLength, bool lastPacket);
+	void CreateDataPacket(TimedSlot* ts, uint8_t payloadLength, bool lastPacket);
 
 	/** @brief Check source and destination addresses in packetIn
 	 *

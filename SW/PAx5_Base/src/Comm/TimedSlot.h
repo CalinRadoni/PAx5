@@ -2,20 +2,20 @@
  * created 2016.11.18 by Calin Radoni
  */
 
-#ifndef PAW_TIMEDSLOT_H_
-#define PAW_TIMEDSLOT_H_
+#ifndef TIMEDSLOT_H_
+#define TIMEDSLOT_H_
 
-#include <PAW_Defines.h>
+#include <CommDefines.h>
 #include <CryptoDefs.h>
 
 namespace PAx5CommProtocol {
 
-class PAW_TimedSlot {
+class TimedSlot {
 protected:
 	uint32_t timeLeft;
 
 public:
-	PAW_TimedSlot();
+	TimedSlot();
 
 	enum class PAW_TS_State : uint8_t
 	{
