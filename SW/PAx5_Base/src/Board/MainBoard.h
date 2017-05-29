@@ -1,6 +1,20 @@
 /**
- * created 2016.02.19 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef MainBoard_H_
 #define MainBoard_H_
@@ -37,7 +51,8 @@ public:
 	enum class BoardType : uint8_t
 	{
 		PAx5_BaseBoard,
-		PAx5_EnvSensor
+		PAx5_EnvSensor,
+		PAx5_CPU
 	};
 
 	bool Use_USART;
@@ -47,7 +62,13 @@ public:
 	bool Radio_RFM69HW;
 	bool PowerPeripherals_PA3;
 
+	uint32_t PortA, PortB, PortC;
+
 	void SetByType(BoardType);
+
+	bool Use_SPI(void);
+
+protected:
 };
 
 // -----------------------------------------------------------------------------
@@ -69,7 +90,14 @@ public:
 
 	/**
 	 * \brief Initialize the board
-	 * \details Initialize the board and common peripherals.
+	 *
+	 * \details
+	 * This function:
+	 * - initialize the board
+	 * - powers the peripherals
+	 * - initialize external FLASH memory
+	 * - initialize the radio module
+	 *
 	 * \param boardDef The definition of the current board
 	 * \return Error::OK if the configuration succeeded. The Error::code for the first failed operation.
 	 */
@@ -81,6 +109,9 @@ public:
 	 *          If Error::code is Error::OK the function does nothing.
 	 */
 	void BlinkError(void);
+
+	void PeripheralsOn(void);
+	void PeripheralsOff(void);
 
 	void RadioIntFired(void);
 	void CheckRadioInterrupt(void);

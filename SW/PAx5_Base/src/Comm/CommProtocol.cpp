@@ -1,6 +1,20 @@
 /**
- * created 2016.07.03 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <CommProtocol.h>
 
@@ -118,7 +132,12 @@ void CommProtocol::CreateSessionKey(TimedSlot* ts)
 	// client nonce is in ts->sessionEncCtx.key[0 and 1]
 	// server nonce is in ts->sessionEncCtx.key[2 and 3]
 
-	// FIXME PAW_CommProtocol::CreateSessionKey rebuild this function
+	/**
+	 * This function can be rebuild to use PRF, encryption or many other methods
+	 * for generating the session key from the two nonces but I really do not
+	 * think that using these two _'random'_ generated and _secret_ nonces directly
+	 * poses a security risk.
+	 */
 }
 
 void CommProtocol::BuildPacketHeader(CryptoContext* ctx, uint8_t dst, uint8_t flags, uint8_t dataLength, uint32_t sessionID)
@@ -225,22 +244,22 @@ void CommProtocol::CreateDataPacket(TimedSlot* ts, uint8_t payloadLength, bool l
 
 // -----------------------------------------------------------------------------
 
-PAW_ChkAddr::CheckAddrResult CommProtocol::CheckAddresses(void)
+CommProtocol::AddrChk CommProtocol::CheckAddresses(void)
 {
 	if(packetRX[CP_PACKET_HDR_SrcAddr_POS] == AddressClass::Address_NONE){
 		if(packetRX[CP_PACKET_HDR_DstAddr_POS] == AddressClass::Address_Gateway)
-			return PAW_ChkAddr::srcNone_dstGW;
-		return PAW_ChkAddr::wrongCombo;
+			return AddrChk::srcNone_dstGW;
+		return AddrChk::wrongCombo;
 	}
 	if(packetRX[CP_PACKET_HDR_SrcAddr_POS] == AddressClass::Address_Broadcast){
-		return PAW_ChkAddr::wrongCombo;
+		return AddrChk::wrongCombo;
 	}
 
-	if(packetRX[CP_PACKET_HDR_DstAddr_POS] == AddressClass::Address_Gateway)   return PAW_ChkAddr::srcOK_dstGW;
-	if(packetRX[CP_PACKET_HDR_DstAddr_POS] == nodeAddress)                     return PAW_ChkAddr::srcOK_dstME;
-	if(packetRX[CP_PACKET_HDR_DstAddr_POS] == AddressClass::Address_Broadcast) return PAW_ChkAddr::srcOK_dstBcast;
+	if(packetRX[CP_PACKET_HDR_DstAddr_POS] == AddressClass::Address_Gateway)   return AddrChk::srcOK_dstGW;
+	if(packetRX[CP_PACKET_HDR_DstAddr_POS] == nodeAddress)                     return AddrChk::srcOK_dstME;
+	if(packetRX[CP_PACKET_HDR_DstAddr_POS] == AddressClass::Address_Broadcast) return AddrChk::srcOK_dstBcast;
 
-	return PAW_ChkAddr::wrongCombo;
+	return AddrChk::wrongCombo;
 }
 
 // -----------------------------------------------------------------------------

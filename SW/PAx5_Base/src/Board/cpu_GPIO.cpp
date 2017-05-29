@@ -1,6 +1,20 @@
 /**
- * created 2017.04.23 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "cpu_GPIO.h"
 
@@ -26,14 +40,6 @@ CPU_GPIO::CPU_GPIO() { }
 CPU_GPIO::~CPU_GPIO() { }
 
 // -----------------------------------------------------------------------------
-
-// TODO based on a define make a 32 bit value that define available pins !!!
-// TODO nu sunt define-uri pentru procesor ???
-#ifdef STM32L051K8
-const uint32_t AvailablePinsA = 0x00FF check !;
-const uint32_t AvaliablePinsB = 0x00FF check !;
-const uint32_t AvailablePinsC = 0x00C0;
-#endif
 
 void CPU_GPIO::AttachToPin(uint8_t pinID)
 {
@@ -163,6 +169,98 @@ bool CPU_GPIO::SetMode(const CPU_GPIO_Definition& pinDefinition)
 
 	return true;
 }
+
+bool CPU_GPIO::SetModeAnalog(void)
+{
+	if((GPIOx == nullptr) || (pinNumber > 0x0F)){
+		hwLogger.AddEntry(FileID, LOG_CODE_SetMode, (uint16_t)pinNumber);
+		return false;
+	}
+
+	uint32_t tmp, val;
+
+	// set the mode to analog
+    val = 3U;
+    tmp = GPIOx->MODER;
+    tmp &= ~(GPIO_MODER_MODE0 << (pinNumber * 2U));
+    tmp |= (val << (pinNumber * 2U));
+    GPIOx->MODER = tmp;
+
+	// NO pull-up or pull-down
+   	val = 0U;
+    tmp = GPIOx->PUPDR;
+    tmp &= ~(GPIO_PUPDR_PUPD0 << (pinNumber * 2U));
+    tmp |= (val << (pinNumber * 2U));
+    GPIOx->PUPDR = tmp;
+
+	return true;
+}
+
+bool CPU_GPIO::SetModeDigitalOutput(void)
+{
+	if((GPIOx == nullptr) || (pinNumber > 0x0F)){
+		hwLogger.AddEntry(FileID, LOG_CODE_SetMode, (uint16_t)pinNumber);
+		return false;
+	}
+
+	uint32_t tmp, val;
+
+	// set the speed to medium
+	val = 1U;
+	tmp = GPIOx->OSPEEDR;
+	tmp &= ~(GPIO_OSPEEDER_OSPEED0 << (pinNumber * 2U));
+	tmp |= (val << (pinNumber * 2U));
+	GPIOx->OSPEEDR = tmp;
+
+	// set output type to push-pull
+	tmp= GPIOx->OTYPER;
+	tmp &= ~(GPIO_OTYPER_OT_0 << pinNumber) ;
+	GPIOx->OTYPER = tmp;
+
+	// set the mode to output
+    val = 1U;
+    tmp = GPIOx->MODER;
+    tmp &= ~(GPIO_MODER_MODE0 << (pinNumber * 2U));
+    tmp |= (val << (pinNumber * 2U));
+    GPIOx->MODER = tmp;
+
+    // NO pull-up or pull-down
+    val = 0U;
+    tmp = GPIOx->PUPDR;
+    tmp &= ~(GPIO_PUPDR_PUPD0 << (pinNumber * 2U));
+    tmp |= (val << (pinNumber * 2U));
+    GPIOx->PUPDR = tmp;
+
+	return true;
+}
+
+bool CPU_GPIO::SetModeDigitalInput(void)
+{
+	if((GPIOx == nullptr) || (pinNumber > 0x0F)){
+		hwLogger.AddEntry(FileID, LOG_CODE_SetMode, (uint16_t)pinNumber);
+		return false;
+	}
+
+	uint32_t tmp, val;
+
+	// set the mode to input
+    val = 0U;
+    tmp = GPIOx->MODER;
+    tmp &= ~(GPIO_MODER_MODE0 << (pinNumber * 2U));
+    tmp |= (val << (pinNumber * 2U));
+    GPIOx->MODER = tmp;
+
+    // NO pull-up or pull-down
+    val = 0U;
+    tmp = GPIOx->PUPDR;
+    tmp &= ~(GPIO_PUPDR_PUPD0 << (pinNumber * 2U));
+    tmp |= (val << (pinNumber * 2U));
+    GPIOx->PUPDR = tmp;
+
+	return true;
+}
+
+// -----------------------------------------------------------------------------
 
 void CPU_GPIO::GetMode(CPU_GPIO_Definition& pinDefinition)
 {

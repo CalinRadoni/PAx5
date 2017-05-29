@@ -1,8 +1,20 @@
 /**
- * created 2016.02.21 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
 
-// -----------------------------------------------------------------------------
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "dev_RFM69.h"
 #include "dev_RFM69_Regs.h"
@@ -106,10 +118,10 @@ DEV_RFM69 sRadio;
 // Modulation index = 2 * frequency deviation  / bitrate
 // 0.5 <= 2 * Fdev/BR <= 10
 // RxBw >= Fdev + BR/2
-// RxBwAfc >=  Fdev + BR/2 + LOoffset (based of XTAL ppm)
+// RxBwAfc >=ï¿½ Fdev + BR/2 + LOoffset (based of XTAL ppm)
 // Fdev + BR/2 < 500kHz
 // Offset = LowBetaAfcOffset * 488 Hz
-// Offset MUST be > DC canceller’s cutoff frequency, set through DccFreqAfc in RegAfcBw
+// Offset MUST be > DC cancellerï¿½s cutoff frequency, set through DccFreqAfc in RegAfcBw
 
 struct WorkConfig {
 	uint8_t RegBitrateMsb;

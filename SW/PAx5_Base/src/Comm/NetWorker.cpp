@@ -1,6 +1,20 @@
 /**
- * created 2016.12.05 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <NetWorker.h>
 #include "dev_RFM69.h"
@@ -107,7 +121,7 @@ TimedSlot* NetWorker::GetSlot(uint8_t srcAddr, uint32_t packetID, TimedSlot::PAW
 
 NetWorker::RXCheck NetWorker::CheckReceivedPacket(void)
 {
-	uint8_t flags, packLen, checkAddr, srcAddr;
+	uint8_t flags, packLen, srcAddr;
 	uint32_t dataH, dataL, packetID;
 	uint8_t i, *ptr;
 	TimedSlot* nodeTS;
@@ -122,30 +136,30 @@ NetWorker::RXCheck NetWorker::CheckReceivedPacket(void)
 	for(i = 0; i < packLen; i++)
 		commProtocol.packetRX[i] = *ptr++;
 
-	checkAddr = commProtocol.CheckAddresses();
-	if(checkAddr == PAW_ChkAddr::wrongCombo) return RXCheck::WrongAddr;    ///< addresses are wrong or not for this node
+	CommProtocol::AddrChk checkAddr = commProtocol.CheckAddresses();
+	if(checkAddr == CommProtocol::AddrChk::wrongCombo) return RXCheck::WrongAddr;    ///< addresses are wrong or not for this node
 
 	flags    = commProtocol.packetRX[CP_PACKET_HDR_FLAGS_POS] & CP_PACKET_HDR_FLAGS;
 	srcAddr  = commProtocol.packetRX[CP_PACKET_HDR_SrcAddr_POS];
 	packetID = commProtocol.BP2DW(&commProtocol.packetRX[CP_PACKET_HDR_ID_POS]);
 
-	if(checkAddr == PAW_ChkAddr::srcNone_dstGW){
+	if(checkAddr == CommProtocol::AddrChk::srcNone_dstGW){
 		// TODO Check if it is an address request packet and process it if it is.
 		return RXCheck::AddrRequest;
 	}
 
-	if(checkAddr == PAW_ChkAddr::srcOK_dstBcast) {
+	if(checkAddr == CommProtocol::AddrChk::srcOK_dstBcast) {
 		// TODO Process broadcast packet. Define them first !
 		return RXCheck::Bcast;
 	}
 
 	if(commProtocol.nodeAddress == AddressClass::Address_Gateway){
-		if((checkAddr != PAW_ChkAddr::srcOK_dstME) && (checkAddr != PAW_ChkAddr::srcOK_dstGW)){
+		if((checkAddr != CommProtocol::AddrChk::srcOK_dstME) && (checkAddr != CommProtocol::AddrChk::srcOK_dstGW)){
 			return RXCheck::AddrOther;
 		}
 	}
 	else{
-		if(checkAddr != PAW_ChkAddr::srcOK_dstME) {
+		if(checkAddr != CommProtocol::AddrChk::srcOK_dstME) {
 			return RXCheck::AddrOther;
 		}
 	}

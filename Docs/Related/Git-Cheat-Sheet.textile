@@ -26,22 +26,56 @@ h2. Simple operations
 @git diff@ to see the differences between working files and staged files
 @git diff --staged@ to see the differences between staged files and the last commit
 
-@git rm <file>@ remove the file from staging area *AND FROM YOUR WORKING DIRECTORY !*
+@git rm <file>@ remove the file from staging area *and from your working directory !*
 @git rm --cached <file>@ remove the file from staging area but *not* from your working directory
 
 @git mv <file1> <file2>@ to rename a file. This is like executing @mv <file1> <file2>; git rm <file1>; git add <file2@
 
+@git help <command>@
+
+h3. Go to a commit
+
+@git log --oneline@ use this to see the commit IDs
+
+@git checkout <commitID> <fileName>@ *changes <fileName> in working directory* to match the commit with @<commitID>@
+
+@git checkout <commitID>@ *changes working directory* to match the commit with @<commitID>@
+@git checkout master@ *changes working directory* to match the @master@ branch
+
+After a change, using @git commit -b <branchName>@ will create the branch @<branchName>@ and you can commit to it.
+Commiting in an unname branch then using @git checkout@ to go to another commit will make unreferenced commits that can be cleaned (removed) with @git gc@
+
 h3. Undoing
 
 @git commit --amend@ takes the staging area and use it for commit. This commit *replaces* previous commit.
-@git reset HEAD <file>@ unstages the staged @<file>@. The @<file>@ in working directory is *not ?* touched.
+@git reset HEAD <file>@ unstages the staged @<file>@. The @<file>@ in working directory is *not* touched.
+
+@git reset <file>@ remove @<file>@ from the staging area and leave the working directory unchanged.
+@git reset@ remove _all files_ from the staging area and leave the working directory unchanged.
+@git reset --hard@ reset the staging area *and the working directory !* to match the most recent commit.
 
 h3. Inspect
 
 bc.
 git log
+git log --oneline
 git status
 git show-ref
+
+h3. Details for log
+
+Add:
+* *--branches* to see all branches
+* *--all* to see all branches including remote ones
+
+@git log --graph --oneline --decorate@
+@git log --graph --decorate@
+@git log --graph --decorate --simplify-by-decoration@
+
+@git log@ accepts output format strings. For details, see @git help log@
+Examples from net:
+@git log --graph --abbrev-commit --decorate --format=format:"%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)"@
+@git log --graph --abbrev-commit --decorate --format=format:"%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)"@
 
 h3. Tagging
 
@@ -73,7 +107,23 @@ h3. Branching
 @git diff <srcBranch> <dstBranch>@ shows differences between branches
 @git merge <branchX>@ merge changes from @<branchX>@ to current branch
 
+h3. Merge conflicts
+
+If @git merge@ found conflicts the merge can be aborted with @git merge --abort@ command.
+To continue the merge edit the files with conflicts, add them to the index (@git add@) and manually commit.
+
+To see the conflicts:
+* @git diff@
+* @git log --merge -p <file>@
+* @git mergetool@
+* or use _git show_ like this:
+** @git show :1:<file>@ for the common anchestor
+** @git show :2:<file>@ for the HEAD version
+** @git show :3:<file>@ for the MERGE_HEAD version
+
 h3. Remoting
+
+Add this: https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
 
 @git remote -v@ shows configured remote servers
 @git remote show <remoteShortName>@ shows informations about the remote identified with @<remoteShortName>@
@@ -89,6 +139,49 @@ h3. Remoting
 *Use @fetch@, @diff@ and @merge@ instead of pull !*
 *Use @fetch@, @diff@ and @merge@ instead of pull !*
 @git pull <repository> <remoteBranchName>@ pulls from specified repository the specified branch in current branch. Is it like a @git fetch@ followed by a @git merge@
+
+h1. Git on the move
+
+h2. Git bundle
+
+Create a complete bundle with: @git bundle create someRepo.bundle --all@
+Copy the file @someRepo.bundle@ to the destination machine
+Clone it on the destination machine with: @git clone someRepo.bundle@
+
+For a more elaborate usage see the man page for "git bundle":https://git-scm.com/docs/git-bundle and the options "git-rev-list-args":https://git-scm.com/docs/git-rev-list
+
+h2. Repository on USB stick
+
+On USB stick:
+bc.
+mkdir someRepo.git
+cd someRepo.git
+git init --bare
+
+Create a remote repository for the USB stick
+@git remote add usbRepo file:///path/to/USBstick/someRepo.git@
+(on Windows: @git remote add usbRepo file://H:\someRepo.git\@)
+and push to it
+@git push usbRepo@
+(first time, if no upstream error is generated, use: @git push --set-upstream master@)
+
+Clone the repository on the remote machine(s).
+
+h1. Add local repository to GitHub
+
+Create an empty repository on GitHub by clicking the *New Repository* button and:
+- set the owner and repository name
+- set the description
+- *do not check* _Initialize this repository with a README_
+- *make sure* that _Add .gitignore_ is set to *None*
+- *make sure* that _Add a license_ is set to *None*
+- click the *Create repository* button.
+
+Add a remote named @origin@ at the url of the new repository and push the local branch there
+Example:
+bc.
+git remote add origin https://github.com/CalinRadoni/PAx5.git
+git push -u origin master
 
 h1. Links
 

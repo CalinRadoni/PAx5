@@ -1,6 +1,20 @@
 /**
- * created 2016.02.19 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "MainBoard.h"
 
@@ -60,15 +74,36 @@ void BoardDefinion::SetByType(BoardType type)
 	ExtFLASH      = true;
 	Radio_RFM69HW = true;
 
-	switch(type){
-		case BoardType::PAx5_BaseBoard:
-			PowerPeripherals_PA3 = false;
-			break;
+	PortC = 0x0000U;
 
-		case BoardType::PAx5_EnvSensor:
-			PowerPeripherals_PA3 = true;
-			break;
+	switch(type){
+	case BoardType::PAx5_CPU:
+		PowerPeripherals_PA3 = false;
+		PortA = 0x9F0FU; ///< PA0-PA3, PA8-PA11, PA12, PA15
+		PortB = 0x00F8U; ///< PB3, PB4-PB7
+		ExtFLASH      = false;
+		Radio_RFM69HW = false;
+		break;
+
+	case BoardType::PAx5_BaseBoard:
+		PowerPeripherals_PA3 = false;
+		PortA = 0x9F0FU; ///< PA0-PA3, PA8-PA11, PA12, PA15
+		PortB = 0x00F8U; ///< PB3, PB4-PB7
+		break;
+
+	case BoardType::PAx5_EnvSensor:
+		PowerPeripherals_PA3 = true;
+		PortA = 0x9602U; ///< PA1, PA9, PA10, PA12, PA15
+		PortB = 0x0020U; ///< PB5
+		break;
 	}
+}
+
+bool BoardDefinion::Use_SPI(void)
+{
+	if(Radio_RFM69HW) return true;
+	if(ExtFLASH)      return true;
+	return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -112,9 +147,11 @@ MainBoard::Error MainBoard::InitializeBoard(BoardDefinion& boardDef)
 		}
 	}
 
-	// power the peripherals if needed
-	if(boardCapabilities.PowerPeripherals_PA3){
-		GPIOA->BSRR = GPIO_BSRR_BR_3;
+	if(brdErr == Error::OK){
+		// power the peripherals if needed
+		if(boardCapabilities.PowerPeripherals_PA3){
+			GPIOA->BSRR = GPIO_BSRR_BR_3;
+		}
 	}
 
 	if(brdErr == Error::OK){
@@ -152,6 +189,22 @@ void MainBoard::BlinkError(void){
 	while(errIn != 0){
 		sLED.Blink(300);
 		--errIn;
+	}
+}
+
+// -----------------------------------------------------------------------------
+
+void MainBoard::PeripheralsOn(void)
+{
+	if(boardCapabilities.PowerPeripherals_PA3){
+		GPIOA->BSRR = GPIO_BSRR_BR_3;
+	}
+}
+
+void MainBoard::PeripheralsOff(void)
+{
+	if(boardCapabilities.PowerPeripherals_PA3){
+		GPIOA->BSRR = GPIO_BSRR_BS_3;
 	}
 }
 
@@ -249,6 +302,10 @@ void MainBoard::ConfigureGPIO(void)
 		// configure PA3 in analog mode
 		val |= GPIO_MODER_MODE3;
 	}
+	if(!(boardCapabilities.Use_SPI())){
+		// configure PA5, PA6 and PA7 in analog mode
+		val |= GPIO_MODER_MODE5 | GPIO_MODER_MODE6 | GPIO_MODER_MODE7;
+	}
 	if(!(boardCapabilities.Use_USART)) {
 		// configure USART1 pins, PA9 and PA10, in analog mode
 		val |= GPIO_MODER_MODE9 | GPIO_MODER_MODE10;
@@ -328,27 +385,27 @@ void MainBoard::ConfigureGPIO(void)
 	}
 
 // ======= SPI pins
-	// PA5 = SPI1 Clock : Output push-pull, Very high speed, value LOW
-	GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE5)) | GPIO_MODER_MODE5_0;
-	GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_5);
-	GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED5;
-	GPIOA->BSRR    =  GPIO_BSRR_BR_5;
-	// PA6 = SPI1 MISO : Input with pull-up
-	GPIOA->MODER   =  GPIOA->MODER & ~(GPIO_MODER_MODE6);
-	// TODO !!! Check without setting the speed. This should not matter for inputs !
-	//GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED6;
-	GPIOA->PUPDR   = (GPIOA->PUPDR & ~(GPIO_PUPDR_PUPD6)) | GPIO_PUPDR_PUPD6_0;
-	// PA7 = SPI1 MOSI : Output push-pull, Very high speed, value LOW
-	GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE7)) | GPIO_MODER_MODE7_0;
-	GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_7);
-	GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED7;
-	GPIOA->BSRR    =  GPIO_BSRR_BR_7;
-	// PA5, PA6 and PA7 configured as alternate function
-	GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE5 | GPIO_MODER_MODE6 | GPIO_MODER_MODE7)) |
-						(GPIO_MODER_MODE5_1 | GPIO_MODER_MODE6_1 | GPIO_MODER_MODE7_1);
-	// Select the alternate function (AFR[0] is AFRL (pin0-7) and AFR[1] is AFRH (pin8-15))
-	// SPI1 is AF0 (0000) for PA5, PA6 and PA7
-	GPIOA->AFR[0]  = (GPIOA->AFR[0] & 0x000FFFFF);
+	if(boardCapabilities.Use_SPI()){
+		// PA5 = SPI1 Clock : Output push-pull, Very high speed, value LOW
+		GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE5)) | GPIO_MODER_MODE5_0;
+		GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_5);
+		GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED5;
+		GPIOA->BSRR    =  GPIO_BSRR_BR_5;
+		// PA6 = SPI1 MISO : Input with pull-up
+		GPIOA->MODER   =  GPIOA->MODER & ~(GPIO_MODER_MODE6);
+		GPIOA->PUPDR   = (GPIOA->PUPDR & ~(GPIO_PUPDR_PUPD6)) | GPIO_PUPDR_PUPD6_0;
+		// PA7 = SPI1 MOSI : Output push-pull, Very high speed, value LOW
+		GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE7)) | GPIO_MODER_MODE7_0;
+		GPIOA->OTYPER  =  GPIOA->OTYPER & ~(GPIO_OTYPER_OT_7);
+		GPIOA->OSPEEDR =  GPIOA->OSPEEDR | GPIO_OSPEEDER_OSPEED7;
+		GPIOA->BSRR    =  GPIO_BSRR_BR_7;
+		// PA5, PA6 and PA7 configured as alternate function
+		GPIOA->MODER   = (GPIOA->MODER & ~(GPIO_MODER_MODE5 | GPIO_MODER_MODE6 | GPIO_MODER_MODE7)) |
+							(GPIO_MODER_MODE5_1 | GPIO_MODER_MODE6_1 | GPIO_MODER_MODE7_1);
+		// Select the alternate function (AFR[0] is AFRL (pin0-7) and AFR[1] is AFRH (pin8-15))
+		// SPI1 is AF0 (0000) for PA5, PA6 and PA7
+		GPIOA->AFR[0]  = (GPIOA->AFR[0] & 0x000FFFFF);
+	}
 
 // ======= Interrupt pin connected to RFM69
 	if(boardCapabilities.Radio_RFM69HW) {

@@ -1,6 +1,20 @@
 /**
- * created 2016.07.03 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef COMMPROTOCOL_H_
 #define COMMPROTOCOL_H_
@@ -38,17 +52,6 @@ constexpr uint8_t CP_PACKET_MAX_DATA_LEN = (CP_PACKET_MAX_LEN - CP_PACKET_OVERHE
 #define CP_TIME_WAIT_DATA    1000
 #define CP_TIME_WAIT_ACK     1000
 #define CP_TIME_Process_Cmd  5000
-
-// TODO Move this enum inside PAW_CommProtocol before the CheckAddresses function
-namespace PAW_ChkAddr {
-	enum CheckAddrResult {
-		wrongCombo = 0,
-		srcNone_dstGW = 1,
-		srcOK_dstGW = 2,
-		srcOK_dstME = 3,
-		srcOK_dstBcast = 4
-	};
-};
 
 /**
  * \brief Packet format version 1
@@ -138,11 +141,18 @@ public:
 	 */
 	void CreateDataPacket(TimedSlot* ts, uint8_t payloadLength, bool lastPacket);
 
-	/** @brief Check source and destination addresses in packetIn
-	 *
-	 * @return one of PAW_ChkAddr::CheckAddrResult
+	/** \brief Results returned by CheckAddresses function */
+	enum class AddrChk : uint8_t {
+		wrongCombo = 0,
+		srcNone_dstGW = 1,
+		srcOK_dstGW = 2,
+		srcOK_dstME = 3,
+		srcOK_dstBcast = 4
+	};
+	/**
+	 * \brief Check source and destination addresses in #packetIn
 	 */
-	PAW_ChkAddr::CheckAddrResult CheckAddresses(void);
+	AddrChk CheckAddresses(void);
 
 	/** @brief Encrypt, sign and generate a new nonce
 	 *

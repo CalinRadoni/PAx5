@@ -5,7 +5,7 @@
     (no_connects 0)
     (area 27.336905 15.76 108.925 61.015)
     (thickness 1.6)
-    (drawings 9)
+    (drawings 11)
     (tracks 323)
     (zones 0)
     (modules 51)
@@ -37,7 +37,7 @@
   )
 
   (setup
-    (last_trace_width 1)
+    (last_trace_width 0.5)
     (user_trace_width 0.6)
     (user_trace_width 0.7)
     (user_trace_width 0.75)
@@ -1623,6 +1623,12 @@
       (net 40 "Net-(P60-Pad1)"))
   )
 
+  (gr_text HV (at 67.85 38.23) (layer F.SilkS)
+    (effects (font (size 1.5 1.5) (thickness 0.3)))
+  )
+  (gr_text LV (at 52.85 38.23) (layer F.SilkS)
+    (effects (font (size 1.5 1.5) (thickness 0.3)))
+  )
   (gr_text -VIn+ (at 98.605 37.01 90) (layer F.SilkS)
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )

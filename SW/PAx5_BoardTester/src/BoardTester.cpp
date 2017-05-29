@@ -1,6 +1,20 @@
 /**
- * created 2016.07.25 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "BoardTester.h"
 
@@ -20,6 +34,7 @@
 #include "cpu_MemoryEEPROM.h"
 #include "cpu_CRC.h"
 #include "cpu_DMA.h"
+#include "cpu_GPIO.h"
 
 #include "ext_HIHSensor.h"
 #include "ext_WS2812.h"
@@ -70,7 +85,6 @@ void BoardTester::InteractiveTest(void)
 	switch(sUSART.bufferRX[0]){
 		case '0':
 			TestBoard();
-			sRadio.Initialize();
 			break;
 
 		case '1': TestEntropy(); break;
@@ -206,6 +220,8 @@ void BoardTester::TestBoard(void)
 	sSPI.clockDivider = clkDiv;
 	sSPI.Configure();
 
+	sRadio.Initialize();
+
 	sTextOutput.Flush();
 }
 
@@ -285,11 +301,24 @@ void BoardTester::TestEntropyADC(void)
 
 void BoardTester::TestADC(void)
 {
-	uint8_t round;
+	CPU_GPIO_Definition gpioDefinition;
+	CPU_GPIO gpioPA0;
+	CPU_GPIO gpioPA1;
+	CPU_GPIO gpioPA2;
+	CPU_GPIO gpioPA3;
 
-	//TODO ZZZZZZZ board.InitializeADCInput(0x07);
+	gpioDefinition.mode  = PinMode::Analog;
+	gpioDefinition.pull  = PinPull::None;
+	gpioDefinition.speed = PinSpeed::Low;
+	gpioDefinition.altFunction = 0;
+	gpioPA0.AttachToPin(PA0); gpioPA0.SetMode(gpioDefinition);
+	gpioPA1.AttachToPin(PA1); gpioPA1.SetMode(gpioDefinition);
+	gpioPA2.AttachToPin(PA2); gpioPA2.SetMode(gpioDefinition);
+	gpioPA3.AttachToPin(PA3); gpioPA3.SetMode(gpioDefinition);
 
-	round = 0;
+	sADC.Enable();
+
+	uint8_t round = 0;
 	sTextOutput.InitBuffer();
 	sADC.oversamplingRatio = 0;
 	while(round < 3){
@@ -323,7 +352,7 @@ void BoardTester::TestADC(void)
 		Delay(1000);
 	}
 
-	//TODO ZZZZZZZ board.InitializeADCInput(0x00);
+	sADC.Disable();
 }
 
 // -----------------------------------------------------------------------------

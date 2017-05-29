@@ -19,4 +19,5 @@ Release/
 *.zip
 
 # others
+.code_review_properties
 Thumbs.db

@@ -10,6 +10,7 @@ Let's say the full name of the @PAx5\SW@ directory is @D:\Projects\PAx5\SW@.
 h2. Start with an empty workspace
 
 By deleting the @D:\Projects\PAx5\SW\.metadata@__ directory you start with an empty workspace.
+*Warning:* Deleting the @.metadata@ directory will also delete the tasks !
 
 Open Atollic TrueSTUDIO and select as workspace directory @D:\Projects\PAx5\SW@.
 
@@ -20,4 +21,3 @@ Click the *Directory...* button and select @D:\Projects\PAx5\SW@ directory.
 Select only the projects and click the *Finish* button.
 
 h1. Done
-

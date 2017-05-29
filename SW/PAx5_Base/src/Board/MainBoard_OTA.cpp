@@ -1,6 +1,20 @@
 /**
- * created 2016.11.05 by Calin Radoni
- */
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "MainBoard_OTA.h"
 #include "dev_ExternalFlash.h"
@@ -27,7 +41,7 @@ uint32_t internalFlashSize = 0;
  *
  * If write conditions are not OK the function will return false.
  *
- * After writting begins the function will restart the CPU, even if the firmware update failed.
+ * After writing begins the function will restart the CPU, even if the firmware update failed.
  * Before restart the status should be visible on the onboard LED.
  */
 __RAMFUNC bool WriteNewFirmware(uint32_t firmwareCodeLength)
@@ -51,17 +65,15 @@ __RAMFUNC bool WriteNewFirmware(uint32_t firmwareCodeLength)
 		return false;
 	}
 
-	RAM_WF_LED_ON();
-
 	// from here on the interrupts are disabled and CPU will be reset at end
-
-	uint32_t flashAddr, extFlashAddr;
 
 	static_assert(CPUMF_PAGE_SIZE_Bytes <= EXT_FLASH_PAGE_SIZE, "wrong page size");
 
+	RAM_WF_LED_ON();
+
 	bool res = true;
-	extFlashAddr = firmwareAddressInExternalFLASH;
-	flashAddr    = CPU_MemoryFLASH_StartAddress;
+	uint32_t extFlashAddr = firmwareAddressInExternalFLASH;
+	uint32_t flashAddr    = CPU_MemoryFLASH_StartAddress;
 	while((flashSize > 0) && res){
 		// read from external FLASH
 		sExternalFlash.dataLen = CPUMF_PAGE_SIZE_Bytes;
@@ -153,12 +165,15 @@ void MainBoardOTA::InternalInit(void)
 void MainBoardOTA::InitDataAndExtFLASH(void)
 {
 	uint32_t var = firmwareAddressInExternalFLASH;
+
+	// erase some sectors in external flash
 	while(var < EXT_FLASH_SIZE){
 		sExternalFlash.SetAddress(var);
 		sExternalFlash.SectorErase();
 		var += EXT_FLASH_SECTOR_SIZE;
 	}
 
+	// set variables to begin adding data
 	currentFlashAddr = firmwareAddressInExternalFLASH;
 	flashBuffIdx = EXT_FLASH_BufDataOffset;
 	firmwareSize = 0;
@@ -170,12 +185,17 @@ bool MainBoardOTA::AddData(uint8_t *buffer, uint8_t len)
 		sExternalFlash.dataBuf[flashBuffIdx] = buffer[i];
 		flashBuffIdx++;
 		if(flashBuffIdx >= EXT_FLASH_BUFFER_LEN){
+			// ext.flash buffer full
+
+			// this should not happen !
 			if(currentFlashAddr >= EXT_FLASH_SIZE) return false;
 
+			// write the buffer
 			sExternalFlash.SetAddress(currentFlashAddr);
 			sExternalFlash.dataLen = EXT_FLASH_PAGE_SIZE;
 			sExternalFlash.WriteData();
 
+			// set the buffer for next data
 			flashBuffIdx = EXT_FLASH_BufDataOffset;
 			currentFlashAddr += EXT_FLASH_PAGE_SIZE;
 		}
@@ -185,6 +205,8 @@ bool MainBoardOTA::AddData(uint8_t *buffer, uint8_t len)
 
 bool MainBoardOTA::Finalize(void)
 {
+	// write the last buffer if it si not empty
+
 	if(flashBuffIdx <= EXT_FLASH_BufDataOffset){
 		firmwareSize = currentFlashAddr - firmwareAddressInExternalFLASH;
 		return true;
@@ -203,6 +225,8 @@ bool MainBoardOTA::Finalize(void)
 	sExternalFlash.dataLen = EXT_FLASH_PAGE_SIZE;
 	sExternalFlash.WriteData();
 
+	// compute firmware size
+
 	flashBuffIdx = EXT_FLASH_BufDataOffset;
 	currentFlashAddr += EXT_FLASH_PAGE_SIZE;
 	firmwareSize = currentFlashAddr - firmwareAddressInExternalFLASH;
@@ -214,15 +238,13 @@ bool MainBoardOTA::Finalize(void)
 
 uint32_t MainBoardOTA::ComputeCRCforStoredFirmware(void)
 {
-	uint32_t flashSize, useSize;
-	uint32_t extFlashAddr;
-
 	sCRC.Enable();
 
 	static_assert(CPUMF_PAGE_SIZE_Bytes <= EXT_FLASH_PAGE_SIZE, "wrong page size");
 
-	flashSize = firmwareSize;
-	extFlashAddr = firmwareAddressInExternalFLASH;
+	uint32_t flashSize = firmwareSize;
+	uint32_t useSize;
+	uint32_t extFlashAddr = firmwareAddressInExternalFLASH;
 	while(flashSize > 0){
 		// read from external FLASH
 		sExternalFlash.dataLen = CPUMF_PAGE_SIZE_Bytes;
