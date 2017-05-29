@@ -1,6 +1,19 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# source files
+*.c text
+*.cpp text
+*.c++ text
+*.hpp text
+*.h text
+*.s text
+*.ld text
+
+# Tips for GitHub linguist library
+Docs/* linguist-documentation
+HW/* linguist-vendored
+
 # Custom for Visual Studio
 *.cs     diff=csharp
 
