@@ -1,18 +1,19 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Hints for GitHub linguist library
+Docs/* linguist-documentation
+SW/PAx5_Base/Drivers/* linguist-vendored
+
 # source files
 *.c text
 *.cpp text
 *.c++ text
-*.hpp text
 *.h text
 *.s text
 *.ld text
-
-# Tips for GitHub linguist library
-Docs/* linguist-documentation
-HW/* linguist-vendored
+*.sch text
+*.kicad_pcb text
 
 # Custom for Visual Studio
 *.cs     diff=csharp
@@ -28,3 +29,5 @@ HW/* linguist-vendored
 *.PDF	 diff=astextplain
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
+*.md text
+*.textile text
