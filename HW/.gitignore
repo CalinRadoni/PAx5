@@ -11,6 +11,7 @@
 # ignore KiCad backup files
 *.bak
 *.kicad_pcb-bak
+_autosave-*
 
 # ignore generated image files
 *.png
