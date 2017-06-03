@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <dev_HIHSensor.h>
+#include <dev_WS2812.h>
 #include "BoardTester.h"
 
 #include "dev_LED.h"
@@ -35,9 +37,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpu_CRC.h"
 #include "cpu_DMA.h"
 #include "cpu_GPIO.h"
-
-#include "ext_HIHSensor.h"
-#include "ext_WS2812.h"
 
 #include "Enc_ChaCha20.h"
 
@@ -361,19 +360,26 @@ void BoardTester::TestI2C(void)
 {
 	uint8_t addr;
 
+	CPU_I2C::Status res;
+
 	sI2C.Enable();
 	sTextOutput.InitBuffer();
 	for(addr = 0; addr < 128; addr++){
 		sI2C.buffLen = 0;
-		sI2C.Write(addr);
-		switch(sI2C.status) {
-			case I2CStatus_OK:
+		res = sI2C.Write(addr);
+		switch(res) {
+			case CPU_I2C::Status::OK:
 				sTextOutput.FormatAndOutputString("Found a device at address 0x%2x\r\n", addr);
 				sTextOutput.Flush();
 				break;
-			case I2CStatus_NACK:
+			case CPU_I2C::Status::NACK:
 				break;
-			case I2CStatus_IntfErr:
+			case CPU_I2C::Status::Timeout:
+				sTextOutput.FormatAndOutputString("Timeout at address 0x%2x\r\n", addr);
+				sTextOutput.Flush();
+				break;
+			case CPU_I2C::Status::IntfErr:
+			case CPU_I2C::Status::Disabled:
 				sTextOutput.FormatAndOutputString("Error, exit.\r\n", addr);
 				sTextOutput.Flush();
 				addr = 0xFF;
@@ -388,8 +394,8 @@ void BoardTester::TestI2C_HIH(void)
 	uint32_t ts, te;
 	bool dataOK;
 	uint8_t round;
-	EXT_HIHSensor hihSensor;
-	EXT_HIHSensor::Status res;
+	DEV_HIHSensor hihSensor;
+	DEV_HIHSensor::Status res;
 
 	sI2C.Enable();
 	sTextOutput.InitBuffer();
@@ -397,7 +403,7 @@ void BoardTester::TestI2C_HIH(void)
 	while(round < 10){
 		res = hihSensor.ReadInit();
 		ts = sysTickCnt;
-		if(res != EXT_HIHSensor::Status::DATA_OK){
+		if(res != DEV_HIHSensor::Status::DATA_OK){
 			sTextOutput.FormatAndOutputString("ReadInit failed (code %d) !\r\n", res);
 			sTextOutput.Flush();
 			round++;
@@ -408,7 +414,7 @@ void BoardTester::TestI2C_HIH(void)
 			while(!dataOK){
 				res = hihSensor.ReadData();
 				te = sysTickCnt - ts;
-				if(res == EXT_HIHSensor::Status::DATA_OK){
+				if(res == DEV_HIHSensor::Status::DATA_OK){
 					sTextOutput.FormatAndOutputString("Humidity %d %d[%%*10], Temperature %d %d[%cC*10], %d ms\r\n",
 							hihSensor.rawH, hihSensor.GetHumidity(), hihSensor.rawT, hihSensor.GetTemperature() - 2731, 0xB0, te);
 					sTextOutput.Flush();
@@ -416,7 +422,7 @@ void BoardTester::TestI2C_HIH(void)
 					round++;
 				}
 				else{
-					if(res == EXT_HIHSensor::Status::DATA_Stale) Delay(1);
+					if(res == DEV_HIHSensor::Status::DATA_Stale) Delay(1);
 					else{
 						// error
 						sTextOutput.FormatAndOutputString("Error %d !\r\n", res);
@@ -492,7 +498,7 @@ void BoardTester::TestI2CSlave(void)
 void BoardTester::TestWS2812(void)
 {
 	sTextOutput.InitBuffer();
-	ws2812.Initialize(EXT_WS2812::WSPinName::PB5);
+	ws2812.Initialize(DEV_WS2812::WSPinName::PB5);
 
 	for(uint8_t round = 0; round < 10; round++){
 		ws2812.InitData();

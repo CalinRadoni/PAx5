@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <dev_HIHSensor.h>
 #include <NetWorker.h>
 #include "version.h"
 #include "Node_Config.h"
@@ -26,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpu_Text.h"
 
 #include "cpu_I2C.h"
-#include "ext_HIHSensor.h"
 
 // -----------------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ int main(void)
 	uint32_t timeStart, timeDelta, timeQ;
 	uint8_t i;
 
-	PAx5::EXT_HIHSensor hihSensor;
+	PAx5::DEV_HIHSensor hihSensor;
 	uint16_t sH, sT;
 
 	timeStart = PAx5::sysTickCnt;
@@ -117,7 +117,7 @@ int main(void)
 
 				PAx5::sTextOutput.FormatAndOutputString("REQ+ACK received\r\n", (uint8_t)chkRes); PAx5::sTextOutput.Flush();
 
-				if(hihSensor.ReadData() == PAx5::EXT_HIHSensor::Status::DATA_OK){
+				if(hihSensor.ReadData() == PAx5::DEV_HIHSensor::Status::DATA_OK){
 					sH = hihSensor.GetHumidity();
 					sT = hihSensor.GetTemperature();
 					PAx5::sTextOutput.FormatAndOutputString("Data: %d %%RH %d degC", sH/10, (sT-2731)/10); PAx5::sTextOutput.Flush();
