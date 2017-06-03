@@ -25,15 +25,17 @@ namespace PAx5 {
 
 const uint8_t I2CBufferLen = 16;
 
-const uint8_t I2CStatus_OK       = 0;
-const uint8_t I2CStatus_NACK     = 1;
-const uint8_t I2CStatus_IntfErr  = 2;
-const uint8_t I2CStatus_Timeout  = 4;
-const uint8_t I2CStatus_Disabled = 8;
-
 class CPU_I2C {
 public:
 	CPU_I2C();
+
+	enum class Status : uint8_t {
+		OK,
+		NACK,
+		IntfErr,
+		Timeout,
+		Disabled
+	};
 
 	void Enable(void);
 	void EnableAsSlave(uint8_t); // address
@@ -41,10 +43,13 @@ public:
 
 	volatile uint8_t buffer[I2CBufferLen];
 	volatile uint8_t buffLen;
-	volatile uint8_t status;
 	volatile bool transferDone;
-	void Read(uint8_t); // slave address
-	void Write(uint8_t); // slave address
+
+	CPU_I2C::Status Read(uint8_t); // slave address
+	CPU_I2C::Status Write(uint8_t); // slave address
+
+	// write and read using repeated start
+	CPU_I2C::Status WriteAndRead(uint8_t, uint8_t, uint8_t); // slave address, no. of bytes to write, no. of bytes to read
 
 	// for slave mode only, called after data has been received
 	void onReceive(void(*)(uint8_t));
@@ -57,7 +62,13 @@ public:
 protected:
 	volatile uint8_t buffIdx;
 	uint8_t myAddress;
+
+	volatile Status status;
+
+	// master of slave mode
 	volatile bool masterMode;
+
+	// in slave mode, it is receiver or transmitter
 	volatile bool slaveReceiver;
 
     void (*callbackOnReceive)(uint8_t);
