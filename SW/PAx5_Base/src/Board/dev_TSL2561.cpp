@@ -225,4 +225,105 @@ bool DEV_TSL2561::Restart(void)
 }
 
 // -----------------------------------------------------------------------------
+
+const uint8_t TSL2561_LUX_SCALE   = 14; // scale by 2^14
+const uint8_t TSL2561_RATIO_SCALE =  9; // scale ratio by 2^9
+const uint8_t TSL2561_CH_SCALE    = 10; // scale channel values by 2^10
+
+const uint32_t TSL2561_CHSCALE_TINT0 = 0x7517; // 322/11 * 2^CH_SCALE
+const uint32_t TSL2561_CHSCALE_TINT1 = 0x0fe7; // 322/81 * 2^CH_SCALE
+
+const uint32_t TSL2561_K1T = 0x0040; // 0.125 * 2^RATIO_SCALE
+const uint32_t TSL2561_B1T = 0x01f2; // 0.0304 * 2^LUX_SCALE
+const uint32_t TSL2561_M1T = 0x01be; // 0.0272 * 2^LUX_SCALE
+const uint32_t TSL2561_K2T = 0x0080; // 0.250 * 2^RATIO_SCALE
+const uint32_t TSL2561_B2T = 0x0214; // 0.0325 * 2^LUX_SCALE
+const uint32_t TSL2561_M2T = 0x02d1; // 0.0440 * 2^LUX_SCALE
+const uint32_t TSL2561_K3T = 0x00c0; // 0.375 * 2^RATIO_SCALE
+const uint32_t TSL2561_B3T = 0x023f; // 0.0351 * 2^LUX_SCALE
+const uint32_t TSL2561_M3T = 0x037b; // 0.0544 * 2^LUX_SCALE
+const uint32_t TSL2561_K4T = 0x0100; // 0.50 * 2^RATIO_SCALE
+const uint32_t TSL2561_B4T = 0x0270; // 0.0381 * 2^LUX_SCALE
+const uint32_t TSL2561_M4T = 0x03fe; // 0.0624 * 2^LUX_SCALE
+const uint32_t TSL2561_K5T = 0x0138; // 0.61 * 2^RATIO_SCALE
+const uint32_t TSL2561_B5T = 0x016f; // 0.0224 * 2^LUX_SCALE
+const uint32_t TSL2561_M5T = 0x01fc; // 0.0310 * 2^LUX_SCALE
+const uint32_t TSL2561_K6T = 0x019a; // 0.80 * 2^RATIO_SCALE
+const uint32_t TSL2561_B6T = 0x00d2; // 0.0128 * 2^LUX_SCALE
+const uint32_t TSL2561_M6T = 0x00fb; // 0.0153 * 2^LUX_SCALE
+const uint32_t TSL2561_K7T = 0x029a; // 1.3 * 2^RATIO_SCALE
+const uint32_t TSL2561_B7T = 0x0018; // 0.00146 * 2^LUX_SCALE
+const uint32_t TSL2561_M7T = 0x0012; // 0.00112 * 2^LUX_SCALE
+const uint32_t TSL2561_B8T = 0x0000; // 0.000 * 2^LUX_SCALE
+const uint32_t TSL2561_M8T = 0x0000; // 0.000 * 2^LUX_SCALE
+
+uint32_t DEV_TSL2561::CalculateLux(void)
+{
+	// Scale the raw values depending on the gain and integration time. 16x and 402ms are nominal values.
+	uint32_t chScale;
+
+	//TODO _TSL2561 add clipping check here !
+
+	switch (intTime) {
+	case RegTiming_IT_14:
+		chScale = TSL2561_CHSCALE_TINT0;
+		break;
+	case RegTiming_IT_101: // 101 msec
+		chScale = TSL2561_CHSCALE_TINT1;
+		break;
+	default: // assume no scaling
+		chScale = (1U << TSL2561_CH_SCALE);
+		break;
+	}
+
+	if(intGain == RegTiming_Gain1x)
+		chScale = chScale << 4; // scale 1x to 16x
+
+	// maximum chScale values are: 0x75170, 0xFE70 and 0x4000
+	// for RegTiming_IT_14 and scale 1x maximum allowed value for rawXXX is 8955
+	// otherway (rawXXX * chScale) will overflow
+	// according to datasheet:
+	// - Tint = 13.7 ms, max ADC count is 5047
+	// - Tint = 101 ms, max ADC count is 37177
+	// - Tint > 178 ms, max ADC count is 65535, limited by the 16 bit registers
+	// so no overflow on the next two lines
+
+	// actually, no overflow in this function
+
+	uint32_t channel0 = (rawLight * chScale) >> TSL2561_CH_SCALE;
+	uint32_t channel1 = (rawIR * chScale)    >> TSL2561_CH_SCALE;
+
+	// find the ratio of the channel values (Channel1/Channel0)
+	uint32_t ratio = 0;
+	if(channel0 != 0)
+		ratio = (channel1 << (TSL2561_RATIO_SCALE + 1)) / channel0;
+	// round the ratio value
+	ratio = (ratio + 1) >> 1;
+
+	uint32_t b, m;
+		 if (ratio <= TSL2561_K1T) {b = TSL2561_B1T; m = TSL2561_M1T;}
+	else if (ratio <= TSL2561_K2T) {b = TSL2561_B2T; m = TSL2561_M2T;}
+	else if (ratio <= TSL2561_K3T) {b = TSL2561_B3T; m = TSL2561_M3T;}
+	else if (ratio <= TSL2561_K4T) {b = TSL2561_B4T; m = TSL2561_M4T;}
+	else if (ratio <= TSL2561_K5T) {b = TSL2561_B5T; m = TSL2561_M5T;}
+	else if (ratio <= TSL2561_K6T) {b = TSL2561_B6T; m = TSL2561_M6T;}
+	else if (ratio <= TSL2561_K7T) {b = TSL2561_B7T; m = TSL2561_M7T;}
+	else                           {b = TSL2561_B8T; m = TSL2561_M8T;}
+
+	uint32_t t0 = channel0 * b;
+	uint32_t t1 = channel1 * m;
+	uint32_t result;
+
+	if(t0 <= t1) result = 0;
+	else{
+		result = t0 - t1;
+
+		result += (1U << (TSL2561_LUX_SCALE - 1)); // round lsb (2^(LUX_SCALE-1))
+		result = result >> TSL2561_LUX_SCALE; // strip fractional portion
+	}
+
+	return result;
+}
+
+// -----------------------------------------------------------------------------
 } /* namespace */

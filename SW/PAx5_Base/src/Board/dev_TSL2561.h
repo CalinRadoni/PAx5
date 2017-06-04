@@ -107,6 +107,14 @@ public:
 
 	bool Restart(void);
 
+	/**
+	 * Converts the raw values set by #ReadData function to Lux
+	 * This function is adapted from TSL2561 datasheet (TAOS059N - March 2009)
+	 *
+	 * \warning The value is good only for T, F and CL packages.
+	 */
+	uint32_t CalculateLux(void);
+
 private:
 	uint8_t sensorAddress;
 	uint8_t intTime;
