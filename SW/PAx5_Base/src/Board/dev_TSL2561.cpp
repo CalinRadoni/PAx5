@@ -60,6 +60,9 @@ const uint8_t RegInt_PersistEveryADC = 0x00;
 // ...
 //const uint8_t RegInt_PersistOutsideThrF = 0x0F;
 
+const uint32_t Return_Error = 0xFFFE;
+const uint32_t Return_Clipping = 0xFFFF;
+
 // -----------------------------------------------------------------------------
 
 DEV_TSL2561::DEV_TSL2561() {
@@ -111,6 +114,20 @@ DEV_TSL2561::Status DEV_TSL2561::Set(Address addr, IntegrationTime time, bool ga
 		case Address::AddressHigh_x49:  sensorAddress = 0x49; break;
 	}
 
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerUp) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
+
+	if(SetTimeAndGain(time, gain16x) != Status::OK)
+		return Status::IntfErr;
+
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerDown) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
+
+	return Status::OK;
+}
+
+DEV_TSL2561::Status DEV_TSL2561::SetTimeAndGain(IntegrationTime time, bool gain16x)
+{
 	switch(time){
 		case IntegrationTime::IntegrationTime_14ms:
 			intTime = RegTiming_IT_14;
@@ -126,21 +143,6 @@ DEV_TSL2561::Status DEV_TSL2561::Set(Address addr, IntegrationTime time, bool ga
 			break;
 	}
 
-	if(gain16x) intGain = RegTiming_Gain16x;
-	else        intGain = RegTiming_Gain1x;
-
-	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerUp) != CPU_I2C::Status::OK)
-		return Status::IntfErr;
-	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegTiming, intTime | intGain) != CPU_I2C::Status::OK)
-		return Status::IntfErr;
-	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerDown) != CPU_I2C::Status::OK)
-		return Status::IntfErr;
-
-	return Status::OK;
-}
-
-DEV_TSL2561::Status DEV_TSL2561::SetGain(bool gain16x)
-{
 	if(gain16x) intGain = RegTiming_Gain16x;
 	else        intGain = RegTiming_Gain1x;
 
@@ -257,22 +259,51 @@ const uint32_t TSL2561_M7T = 0x0012; // 0.00112 * 2^LUX_SCALE
 const uint32_t TSL2561_B8T = 0x0000; // 0.000 * 2^LUX_SCALE
 const uint32_t TSL2561_M8T = 0x0000; // 0.000 * 2^LUX_SCALE
 
-uint32_t DEV_TSL2561::CalculateLux(void)
+const uint16_t TSL2561_CLIP_14 = 5000;
+const uint16_t TSL2561_CLIP_101 = 37000;
+const uint16_t TSL2561_CLIP_178 = 65000;
+
+bool DEV_TSL2561::Clipping(void)
 {
+	// according to datasheet:
+	// - Tint = 13.7 ms, max ADC count is 5047
+	// - Tint = 101 ms, max ADC count is 37177
+	// - Tint > 178 ms, max ADC count is 65535, limited by the 16 bit registers
+
+	bool clipping = false;
+
+	switch (intTime) {
+	case RegTiming_IT_14:
+		if((rawLight > TSL2561_CLIP_14) || (rawIR > TSL2561_CLIP_14)) clipping = true;
+		break;
+	case RegTiming_IT_101:
+		if((rawLight > TSL2561_CLIP_101) || (rawIR > TSL2561_CLIP_101)) clipping = true;
+		break;
+	default: // assume no scaling
+		if((rawLight > TSL2561_CLIP_178) || (rawIR > TSL2561_CLIP_178)) clipping = true;
+		break;
+	}
+
+	return clipping;
+}
+
+uint32_t DEV_TSL2561::ConvertInLux(void)
+{
+	if(Clipping())
+		return 0xFFFF;
+
 	// Scale the raw values depending on the gain and integration time. 16x and 402ms are nominal values.
 	uint32_t chScale;
-
-	//TODO _TSL2561 add clipping check here !
 
 	switch (intTime) {
 	case RegTiming_IT_14:
 		chScale = TSL2561_CHSCALE_TINT0;
 		break;
-	case RegTiming_IT_101: // 101 msec
+	case RegTiming_IT_101:
 		chScale = TSL2561_CHSCALE_TINT1;
 		break;
-	default: // assume no scaling
-		chScale = (1U << TSL2561_CH_SCALE);
+	default:
+		chScale = (1U << TSL2561_CH_SCALE); // no scaling
 		break;
 	}
 
@@ -281,14 +312,11 @@ uint32_t DEV_TSL2561::CalculateLux(void)
 
 	// maximum chScale values are: 0x75170, 0xFE70 and 0x4000
 	// for RegTiming_IT_14 and scale 1x maximum allowed value for rawXXX is 8955
-	// otherway (rawXXX * chScale) will overflow
 	// according to datasheet:
 	// - Tint = 13.7 ms, max ADC count is 5047
 	// - Tint = 101 ms, max ADC count is 37177
 	// - Tint > 178 ms, max ADC count is 65535, limited by the 16 bit registers
-	// so no overflow on the next two lines
-
-	// actually, no overflow in this function
+	// so no overflow in this function
 
 	uint32_t channel0 = (rawLight * chScale) >> TSL2561_CH_SCALE;
 	uint32_t channel1 = (rawIR * chScale)    >> TSL2561_CH_SCALE;
@@ -318,11 +346,83 @@ uint32_t DEV_TSL2561::CalculateLux(void)
 	else{
 		result = t0 - t1;
 
-		result += (1U << (TSL2561_LUX_SCALE - 1)); // round lsb (2^(LUX_SCALE-1))
-		result = result >> TSL2561_LUX_SCALE; // strip fractional portion
+		result += (1U << (TSL2561_LUX_SCALE - 1)); // round lsb (2 ^ (LUX_SCALE - 1))
+		result = result >> TSL2561_LUX_SCALE;      // strip fractional part
 	}
 
 	return result;
+}
+
+// -----------------------------------------------------------------------------
+
+uint32_t DEV_TSL2561::GetLux(Address addr)
+{
+	uint32_t res;
+
+	// try 101ms and 16x
+
+	if(Set(addr, IntegrationTime::IntegrationTime_101ms, true) != Status::OK)
+		return Return_Error;
+	if(WakeUp() != Status::OK)
+		return Return_Error;
+	while(!DataIsReady()) { /* wait */ }
+	if(!Clipping()){
+		res = ConvertInLux();
+		Sleep();
+		return res;
+	}
+
+	// try 101ms and 1x
+	if(SetTimeAndGain(IntegrationTime::IntegrationTime_101ms, false) != Status::OK){
+		Sleep();
+		return Return_Error;
+	}
+	if(!Restart()){
+		Sleep();
+		return Return_Error;
+	}
+	while(!DataIsReady()) { /* wait */ }
+	if(!Clipping()){
+		res = ConvertInLux();
+		Sleep();
+		return res;
+	}
+
+	// try 13.7ms and 16x
+	if(SetTimeAndGain(IntegrationTime::IntegrationTime_14ms, true) != Status::OK){
+		Sleep();
+		return Return_Error;
+	}
+	if(!Restart()){
+		Sleep();
+		return Return_Error;
+	}
+	while(!DataIsReady()) { /* wait */ }
+	if(!Clipping()){
+		res = ConvertInLux();
+		Sleep();
+		return res;
+	}
+
+	// try 13.7ms and 1x
+	if(SetTimeAndGain(IntegrationTime::IntegrationTime_14ms, false) != Status::OK){
+		Sleep();
+		return Return_Error;
+	}
+	if(!Restart()){
+		Sleep();
+		return Return_Error;
+	}
+	while(!DataIsReady()) { /* wait */ }
+	if(!Clipping()){
+		res = ConvertInLux();
+		Sleep();
+		return res;
+	}
+
+	// sensor limit reached
+	Sleep();
+	return Return_Clipping;
 }
 
 // -----------------------------------------------------------------------------

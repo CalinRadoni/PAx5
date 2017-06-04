@@ -75,7 +75,7 @@ public:
 	 */
 	DEV_TSL2561::Status Set(Address, IntegrationTime, bool gain16x);
 
-	DEV_TSL2561::Status SetGain(bool gain16x);
+	DEV_TSL2561::Status SetTimeAndGain(IntegrationTime, bool gain16x);
 
 	/**
 	 * Wakes up the sensor.
@@ -103,17 +103,50 @@ public:
 	 */
 	bool DataIsReady(void);
 
+	/**
+	 * Read the channel 0 (Visible + IR) and channel 1 (IR only).
+	 * The data goes to #rawLight and #rawIR
+	 */
 	bool ReadData(void);
 
+	/**
+	 * Put the sensor to sleep, wait at least 1ms and wakes the sensor up
+	 */
 	bool Restart(void);
+
+	/**
+	 * Returns true if acquired values are closer to the maximum value
+	 * corresponding to current integration time
+	 */
+	bool Clipping(void);
 
 	/**
 	 * Converts the raw values set by #ReadData function to Lux
 	 * This function is adapted from TSL2561 datasheet (TAOS059N - March 2009)
 	 *
-	 * \warning The value is good only for T, F and CL packages.
+	 * \warning The value is good only for T, F and CL packages (no CS package).
+	 *
+	 * \return the light intensity in Lux
+	 *         0xFFFF if clipping
 	 */
-	uint32_t CalculateLux(void);
+	uint32_t ConvertInLux(void);
+
+	/**
+	 * Simple function to read and convert data.
+	 * This function:
+	 * - set the sensor
+	 * - makes a read at 101 ms integration time and 16x gain
+	 * - if the value is clipped makes another read at 101 ms integration time and 1x gain
+	 * - convert raw values to lux
+	 * - put the sensor to sleep
+	 *
+	 * \warning This is a blocking function ! It takes between 120 ms and 250 ms to return.
+	 *
+	 * \return the light intensity in Lux if acquired values are usable
+	 *         0xFFFF if clipping
+	 *         0xFFFE if error
+	 */
+	uint32_t GetLux(Address);
 
 private:
 	uint8_t sensorAddress;
