@@ -115,13 +115,43 @@ void CPU_I2C::Disable(void)
 
 // -----------------------------------------------------------------------------
 
-CPU_I2C::Status CPU_I2C::Read(uint8_t slaveAddr)
+CPU_I2C::Status CPU_I2C::Test(uint8_t slaveAddr)
+{
+	if((status == Status::Disabled) || (status == Status::IntfErr)) Enable();
+
+	status = Status::OK;
+	transferDone = false;
+	buffIdx = 1;
+	buffLen = 0;
+
+	// Set slave address, write transfer, 0 bytes to send, autoend
+	I2C1->CR2 = I2C_CR2_AUTOEND | (slaveAddr << 1);
+
+	I2C1->TXDR = 0;
+	I2C1->CR2 |= I2C_CR2_START;
+
+	uint32_t timeStart = sysTickCnt;
+	while(!transferDone) {
+		if((sysTickCnt - timeStart) >= I2C_TransferTimeout){
+			status = Status::Timeout;
+			transferDone = true;
+			hwLogger.AddEntry(FileID, LOG_CODE_WTimeout, (uint16_t)slaveAddr);
+		}
+	}
+
+	return status;
+}
+
+// -----------------------------------------------------------------------------
+
+CPU_I2C::Status CPU_I2C::Read(uint8_t slaveAddr, uint8_t cnt)
 {
 	if((status == Status::Disabled) || (status == Status::IntfErr)) Enable();
 
 	status = Status::OK;
 	transferDone = false;
 	buffIdx = 0;
+	buffLen = cnt;
 
 	// Set slave address, read transfer, number of bytes to read, autoend
 	I2C1->CR2 = I2C_CR2_AUTOEND | I2C_CR2_RD_WRN | (buffLen << 16) | (slaveAddr << 1);
@@ -140,13 +170,29 @@ CPU_I2C::Status CPU_I2C::Read(uint8_t slaveAddr)
 	return status;
 }
 
-CPU_I2C::Status CPU_I2C::Write(uint8_t slaveAddr)
+// -----------------------------------------------------------------------------
+
+CPU_I2C::Status CPU_I2C::WriteByte(uint8_t slaveAddr, uint8_t data)
+{
+	buffer[0] = data;
+	return WriteBuffer(slaveAddr, 1);
+}
+
+CPU_I2C::Status CPU_I2C::Write2Bytes(uint8_t slaveAddr, uint8_t data0, uint8_t data1)
+{
+	buffer[0] = data0;
+	buffer[1] = data1;
+	return WriteBuffer(slaveAddr, 2);
+}
+
+CPU_I2C::Status CPU_I2C::WriteBuffer(uint8_t slaveAddr, uint8_t cnt)
 {
 	if((status == Status::Disabled) || (status == Status::IntfErr)) Enable();
 
 	status = Status::OK;
 	transferDone = false;
 	buffIdx = 0;
+	buffLen = cnt;
 
 	// Set slave address, write transfer, number bytes to send, autoend
 	I2C1->CR2 = I2C_CR2_AUTOEND | (buffLen << 16) | (slaveAddr << 1);
@@ -166,6 +212,14 @@ CPU_I2C::Status CPU_I2C::Write(uint8_t slaveAddr)
 	return status;
 }
 
+// -----------------------------------------------------------------------------
+
+CPU_I2C::Status CPU_I2C::WriteByteAndRead(uint8_t slaveAddr, uint8_t data, uint8_t rdCnt)
+{
+	buffer[0] = data;
+	return WriteAndRead(slaveAddr, 1, rdCnt);
+}
+
 CPU_I2C::Status CPU_I2C::WriteAndRead(uint8_t slaveAddr, uint8_t wrCnt, uint8_t rdCnt)
 {
 	if((status == Status::Disabled) || (status == Status::IntfErr)) Enable();
@@ -176,7 +230,7 @@ CPU_I2C::Status CPU_I2C::WriteAndRead(uint8_t slaveAddr, uint8_t wrCnt, uint8_t 
 	buffLen = wrCnt;
 
 	// Set slave address, write transfer, number bytes to send, NO autoend
-	I2C1->CR2 = I2C_CR2_AUTOEND | (buffLen << 16) | (slaveAddr << 1);
+	I2C1->CR2 = (buffLen << 16) | (slaveAddr << 1);
 
 	I2C1->TXDR = buffer[buffIdx++];
 	I2C1->CR2 |= I2C_CR2_START;

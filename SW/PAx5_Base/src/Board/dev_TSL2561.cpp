@@ -22,6 +22,7 @@ namespace PAx5 {
 
 const uint8_t RegCommand_Cmd      = 0x80;
 const uint8_t RegCommand_ClearInt = 0x40;
+const uint8_t RegCommand_Word     = 0x20;
 
 const uint8_t RegControl   = 0x00; // Control of basic functions
 const uint8_t RegTiming    = 0x01; // Integration time/gain control
@@ -46,6 +47,10 @@ const uint8_t RegTiming_IT_14   = 0x00; // 13.7 ms, scale = 0.034
 const uint8_t RegTiming_IT_101  = 0x01; // 101 ms,  scale = 0.252
 const uint8_t RegTiming_IT_402  = 0x02; // 402 ms,  scale = 1
 
+const uint32_t WaitTime_14  =  16;
+const uint32_t WaitTime_101 = 120;
+const uint32_t WaitTime_402 = 450;
+
 const uint8_t RegInt_IntDisabled = 0x00;
 const uint8_t RegInt_IntLevel    = 0x10;
 const uint8_t RegInt_IntSMBAlert = 0x20;
@@ -59,8 +64,10 @@ const uint8_t RegInt_PersistEveryADC = 0x00;
 
 DEV_TSL2561::DEV_TSL2561() {
 	sensorAddress = 0x39;
-	intTime = RegTiming_IT_402;
-	intGain = RegTiming_Gain1x;
+	intTime       = RegTiming_IT_402;
+	startTime     = sysTickCnt;
+	waitTime      = WaitTime_402;
+	intGain       = RegTiming_Gain1x;
 }
 
 DEV_TSL2561::~DEV_TSL2561() {
@@ -78,25 +85,20 @@ DEV_TSL2561::Status DEV_TSL2561::Check(Address addr)
 		case Address::AddressHigh_x49:  sa = 0x49; break;
 	}
 
-	sI2C.buffLen = 0;
-	if(sI2C.Write(sa) != CPU_I2C::Status::OK) return Status::NACK;
+	if(sI2C.Test(sa) != CPU_I2C::Status::OK)
+		return Status::NACK;
 
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegControl;
-	sI2C.buffer[1] = RegControl_PowerUp;
-	if(sI2C.Write(sa) != CPU_I2C::Status::OK) return Status::IntfErr;
+	if(sI2C.Write2Bytes(sa, RegCommand_Cmd | RegControl, RegControl_PowerUp) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
 
-	sI2C.buffLen = 1;
-	sI2C.buffer[0] = RegID;
-	if(sI2C.WriteAndRead(sa, 1, 1) != CPU_I2C::Status::OK) return Status::IntfErr;
+	if(sI2C.WriteByteAndRead(sa, RegID, 1) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
 	uint8_t data = sI2C.buffer[0];
 	if((data & 0xF0) != 0x10)
 		return Status::IntfErr;
 
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegControl;
-	sI2C.buffer[1] = RegControl_PowerDown;
-	if(sI2C.Write(sa) != CPU_I2C::Status::OK) return Status::IntfErr;
+	if(sI2C.Write2Bytes(sa, RegCommand_Cmd | RegControl, RegControl_PowerDown) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
 
 	return Status::OK;
 }
@@ -110,49 +112,28 @@ DEV_TSL2561::Status DEV_TSL2561::Set(Address addr, IntegrationTime time, bool ga
 	}
 
 	switch(time){
-		case IntegrationTime::IntegrationTime_14ms:  intTime = RegTiming_IT_14;  break;
-		case IntegrationTime::IntegrationTime_101ms: intTime = RegTiming_IT_101; break;
-		case IntegrationTime::IntegrationTime_402ms: intTime = RegTiming_IT_402; break;
+		case IntegrationTime::IntegrationTime_14ms:
+			intTime = RegTiming_IT_14;
+			waitTime = WaitTime_14;
+			break;
+		case IntegrationTime::IntegrationTime_101ms:
+			intTime = RegTiming_IT_101;
+			waitTime = WaitTime_101;
+			break;
+		case IntegrationTime::IntegrationTime_402ms:
+			intTime = RegTiming_IT_402;
+			waitTime = WaitTime_402;
+			break;
 	}
 
 	if(gain16x) intGain = RegTiming_Gain16x;
 	else        intGain = RegTiming_Gain1x;
 
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegControl;
-	sI2C.buffer[1] = RegControl_PowerUp;
-	if(sI2C.Write(sensorAddress) != CPU_I2C::Status::OK) return Status::IntfErr;
-
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegTiming;
-	sI2C.buffer[1] = intTime | intGain;
-	if(sI2C.Write(sensorAddress) != CPU_I2C::Status::OK) return Status::IntfErr;
-
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegControl;
-	sI2C.buffer[1] = RegControl_PowerDown;
-	if(sI2C.Write(sensorAddress) != CPU_I2C::Status::OK) return Status::IntfErr;
-
-	return Status::OK;
-}
-
-DEV_TSL2561::Status DEV_TSL2561::WakeUp(void)
-{
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegControl;
-	sI2C.buffer[1] = RegControl_PowerUp;
-	if(sI2C.Write(sensorAddress) != CPU_I2C::Status::OK)
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerUp) != CPU_I2C::Status::OK)
 		return Status::IntfErr;
-
-	return Status::OK;
-}
-
-DEV_TSL2561::Status DEV_TSL2561::Sleep(void)
-{
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegControl;
-	sI2C.buffer[1] = RegControl_PowerUp;
-	if(sI2C.Write(sensorAddress) != CPU_I2C::Status::OK)
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegTiming, intTime | intGain) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerDown) != CPU_I2C::Status::OK)
 		return Status::IntfErr;
 
 	return Status::OK;
@@ -163,23 +144,84 @@ DEV_TSL2561::Status DEV_TSL2561::SetGain(bool gain16x)
 	if(gain16x) intGain = RegTiming_Gain16x;
 	else        intGain = RegTiming_Gain1x;
 
-	sI2C.buffLen = 2;
-	sI2C.buffer[0] = RegCommand_Cmd | RegTiming;
-	sI2C.buffer[1] = intTime | intGain;
-	if(sI2C.Write(sensorAddress) != CPU_I2C::Status::OK)
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegTiming, intTime | intGain) != CPU_I2C::Status::OK)
 		return Status::IntfErr;
 
 	return Status::OK;
 }
 
+// -----------------------------------------------------------------------------
+
+DEV_TSL2561::Status DEV_TSL2561::WakeUp(void)
+{
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerUp) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
+
+	startTime = sysTickCnt;
+	return Status::OK;
+}
+
+DEV_TSL2561::Status DEV_TSL2561::Sleep(void)
+{
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerDown) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
+
+	return Status::OK;
+}
+
+// -----------------------------------------------------------------------------
+
 uint8_t DEV_TSL2561::GetID(void)
 {
-	sI2C.buffLen = 1;
-	sI2C.buffer[0] = RegID;
-	if(sI2C.WriteAndRead(sensorAddress, 1, 1) != CPU_I2C::Status::OK)
+	if(sI2C.WriteByteAndRead(sensorAddress, RegID, 1) != CPU_I2C::Status::OK)
 		return 0xFF;
 
 	return sI2C.buffer[0];
+}
+
+// -----------------------------------------------------------------------------
+
+bool DEV_TSL2561::DataIsReady(void)
+{
+	return ((sysTickCnt - startTime) >= waitTime);
+}
+
+bool DEV_TSL2561::ReadData(void)
+{
+	uint8_t dH, dL;
+
+	if(sI2C.WriteByteAndRead(sensorAddress, RegCommand_Cmd | RegCommand_Word | RegData0L, 2) != CPU_I2C::Status::OK)
+		return false;
+	dL = sI2C.buffer[0];
+	dH = sI2C.buffer[1];
+	rawLight = dH;
+	rawLight = rawLight << 8;
+	rawLight |= dL;
+
+	if(sI2C.WriteByteAndRead(sensorAddress, RegCommand_Cmd | RegCommand_Word | RegData1L, 2) != CPU_I2C::Status::OK)
+		return false;
+	dL = sI2C.buffer[0];
+	dH = sI2C.buffer[1];
+	rawIR = dH;
+	rawIR = rawIR << 8;
+	rawIR |= dL;
+
+	return true;
+}
+
+bool DEV_TSL2561::Restart(void)
+{
+	if(Sleep() != Status::OK)
+		return false;
+
+	// wait 1 - 2 ms
+	startTime = sysTickCnt;
+	while((sysTickCnt - startTime) < 2) { /* wait */ }
+
+	if(WakeUp() != Status::OK)
+		return false;
+
+	return true;
 }
 
 // -----------------------------------------------------------------------------

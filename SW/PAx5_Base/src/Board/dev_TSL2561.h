@@ -75,9 +75,15 @@ public:
 	 */
 	DEV_TSL2561::Status Set(Address, IntegrationTime, bool gain16x);
 
-	DEV_TSL2561::Status WakeUp(void);
-	DEV_TSL2561::Status Sleep(void);
 	DEV_TSL2561::Status SetGain(bool gain16x);
+
+	/**
+	 * Wakes up the sensor.
+	 * Also starts data acquisition.
+	 */
+	DEV_TSL2561::Status WakeUp(void);
+
+	DEV_TSL2561::Status Sleep(void);
 
 	/**
 	 * \brief Get the value of sensor's ID register
@@ -92,10 +98,25 @@ public:
 	 */
 	uint8_t GetID(void);
 
+	/**
+	 * If enough time has elapsed since sensor power up this function returns true.
+	 */
+	bool DataIsReady(void);
+
+	bool ReadData(void);
+
+	bool Restart(void);
+
 private:
 	uint8_t sensorAddress;
 	uint8_t intTime;
 	uint8_t intGain;
+
+	uint32_t startTime;
+	uint32_t waitTime;
+
+	uint32_t rawLight;
+	uint32_t rawIR;
 };
 
 } /* namespace */

@@ -33,8 +33,7 @@ DEV_HIHSensor::~DEV_HIHSensor() {
 
 DEV_HIHSensor::Status DEV_HIHSensor::ReadInit(void)
 {
-	sI2C.buffLen = 0;
-	if(sI2C.Write(0x27) == CPU_I2C::Status::OK)
+	if(sI2C.Test(0x27) == CPU_I2C::Status::OK)
 		return Status::DATA_OK;
 
 	return Status::DATA_IntfErr;
@@ -42,8 +41,7 @@ DEV_HIHSensor::Status DEV_HIHSensor::ReadInit(void)
 
 DEV_HIHSensor::Status DEV_HIHSensor::ReadData(void)
 {
-	sI2C.buffLen = 4;
-	CPU_I2C::Status i2cState = sI2C.Read(0x27);
+	CPU_I2C::Status i2cState = sI2C.Read(0x27, 4);
 	if(i2cState == CPU_I2C::Status::OK){
 		uint8_t stale = sI2C.buffer[0] & 0xC0;
 

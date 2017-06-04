@@ -25,6 +25,13 @@ namespace PAx5 {
 
 const uint8_t I2CBufferLen = 16;
 
+/**
+ * CPU_I2C is the driver class for I2C communications.
+ * It can be initialized as master with the {\see CPU_I2C#Enable Enable()} function
+ * or as slave with the {\see CPU_I2C#EnableAsSlave EnableAsSlave} function.
+ *
+ * This class uses I2C1 peripheral.
+ */
 class CPU_I2C {
 public:
 	CPU_I2C();
@@ -37,31 +44,99 @@ public:
 		Disabled
 	};
 
+	/** \brief Enable as master */
 	void Enable(void);
+
+	/**
+	 * \brief Enable as slave
+	 * \param address to be used as I2C slave device
+	 */
 	void EnableAsSlave(uint8_t); // address
+
+	/** Disable I2C peripheral */
 	void Disable(void);
 
+	/**
+	 * \brief Communication buffer
+	 * \details This buffer is used for transferring data between system and I2C bus
+	 */
 	volatile uint8_t buffer[I2CBufferLen];
-	volatile uint8_t buffLen;
-	volatile bool transferDone;
 
-	CPU_I2C::Status Read(uint8_t); // slave address
-	CPU_I2C::Status Write(uint8_t); // slave address
+	/**
+	 * \brief Test if is an I2C slave at supplied address
+	 *
+	 * \return Status::OK if a slave device is present
+	 *         Status::NACK if a slave is not present
+	 *         Other values on error
+	 * At the end #buffLen contains the number of bytes read.
+	 */
+	CPU_I2C::Status Test(uint8_t slaveAddr);
 
-	// write and read using repeated start
-	CPU_I2C::Status WriteAndRead(uint8_t, uint8_t, uint8_t); // slave address, no. of bytes to write, no. of bytes to read
+	/**
+	 * \brief Read from an I2C slave
+	 *
+	 * \details Reads {\link #buffLen} bytes from the {\link #buffer buffer[]}
+	 * At the end #buffLen contains the number of bytes read.
+	 */
+	CPU_I2C::Status Read(uint8_t slaveAddr, uint8_t cnt);
 
-	// for slave mode only, called after data has been received
+	/** Write a byte to an I2C slave.
+	 * This is a shortcut function that calls #WriteBuffer function
+	 */
+	CPU_I2C::Status WriteByte(uint8_t slaveAddr, uint8_t data);
+
+	/** Write two bytes to an I2C slave.
+	 * This is a shortcut function that calls #WriteBuffer function
+	 */
+	CPU_I2C::Status Write2Bytes(uint8_t slaveAddr, uint8_t data0, uint8_t data1);
+
+	/**
+	 * \brief Write from #buffer to an I2C slave
+	 *
+	 * \details Write specified number of bytes from #buffer
+	 *
+	 * \return
+	 */
+	CPU_I2C::Status WriteBuffer(uint8_t slaveAddr, uint8_t cnt);
+
+	/**
+	 * Write a byte and read some using repeated start
+	 * This is a shortcut function that calls #WriteAndRead function
+	 */
+	CPU_I2C::Status WriteByteAndRead(uint8_t slaveAddr, uint8_t data, uint8_t rdCnt);
+
+	/**
+	 * \brief Write and read using repeated start
+	 * \details Combine write and read using repeated start condition.
+	 * \param slaveAddr address of I2C slave
+	 * \param wrCnt     number of bytes to write
+	 * \param rdCnt     number of bytes to read
+	 */
+	CPU_I2C::Status WriteAndRead(uint8_t slaveAddr, uint8_t wrCnt, uint8_t rdCnt);
+
+	/**
+	 * \brief User function to handle received data in SLAVE mode
+	 * \details For SLAVE mode only.
+	 */
 	void onReceive(void(*)(uint8_t));
 
-	// for slave mode only, called before sending data
+	/**
+	 * \brief User function called before sending data in SLAVE mode
+	 * \details For SLAVE mode only.
+	 */
 	void onRequest(void(*)(void));
 
+	/**
+	 * \brief The I2C1 interrupt handler
+	 */
 	void HandleI2CInt(void);
 
 protected:
+	volatile uint8_t buffLen;
 	volatile uint8_t buffIdx;
-	uint8_t myAddress;
+	volatile bool transferDone;
+
+	volatile uint8_t myAddress;
 
 	volatile Status status;
 
