@@ -26,7 +26,7 @@ namespace PAx5Gateway {
 
 #define SW_VER_MAJOR	0
 #define SW_VER_MINOR	4
-#define SW_VER_BUILD	63
+#define SW_VER_BUILD	65
 
 }
 

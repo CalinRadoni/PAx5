@@ -17,7 +17,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="a" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.staticLib" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.staticLib" cleanCommand="rm -f" description="" id="com.atollic.truestudio.lib.debug.953937634" name="Debug" parent="com.atollic.truestudio.lib.debug">
+				<configuration artifactExtension="a" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.staticLib" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.staticLib" cleanCommand="rm -f" description="" id="com.atollic.truestudio.lib.debug.953937634" name="Debug" parent="com.atollic.truestudio.lib.debug" postbuildStep="D:\Programs\BNI\BuildNumberInc.exe -v ..\src\Board\versionBase.h Base_SW_VER_BUILD">
 					<folderInfo id="com.atollic.truestudio.lib.debug.953937634." name="/" resourcePath="">
 						<toolChain id="com.atollic.truestudio.lib.debug.toolchain.995859943" name="Atollic ARM Tools" superClass="com.atollic.truestudio.lib.debug.toolchain">
 							<option id="com.atollic.truestudio.toolchain_options.mcu.1795238709" name="Microcontroller" superClass="com.atollic.truestudio.toolchain_options.mcu" useByScannerDiscovery="false" value="STM32L051K8" valueType="string"/>
@@ -54,7 +54,7 @@
 									<listOptionValue builtIn="false" value="STM32L051xx"/>
 								</option>
 								<option id="com.atollic.truestudio.gcc.cstandard.101753797" name="C standard" superClass="com.atollic.truestudio.gcc.cstandard" useByScannerDiscovery="false" value="com.atollic.truestudio.gcc.cstandard.c1x" valueType="enumerated"/>
-								<option id="com.atollic.truestudio.gcc.warnings.extra.786552943" superClass="com.atollic.truestudio.gcc.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.atollic.truestudio.gcc.warnings.extra.786552943" name="Enable extra warning flags" superClass="com.atollic.truestudio.gcc.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<inputType id="com.atollic.truestudio.gcc.input.1930793189" superClass="com.atollic.truestudio.gcc.input"/>
 							</tool>
 							<tool id="com.atollic.truestudio.ld.base.3706910" name="C Linker" superClass="com.atollic.truestudio.ld.base"/>
@@ -79,7 +79,7 @@
 									<listOptionValue builtIn="false" value="STM32L051xx"/>
 								</option>
 								<option id="com.atollic.truestudio.gpp.cppstandard.1585792817" name="C++ standard" superClass="com.atollic.truestudio.gpp.cppstandard" useByScannerDiscovery="false" value="com.atollic.truestudio.gpp.cppstandard.cpp0x" valueType="enumerated"/>
-								<option id="com.atollic.truestudio.gpp.warnings.extra.2037239803" superClass="com.atollic.truestudio.gpp.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.atollic.truestudio.gpp.warnings.extra.2037239803" name="Enable extra warning flags" superClass="com.atollic.truestudio.gpp.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<inputType id="com.atollic.truestudio.gpp.input.1568773492" superClass="com.atollic.truestudio.gpp.input"/>
 							</tool>
 							<tool id="com.atollic.truestudio.ldcc.base.1144676206" name="C++ Linker" superClass="com.atollic.truestudio.ldcc.base"/>
@@ -110,7 +110,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="a" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.staticLib" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.staticLib" cleanCommand="rm -f" description="" id="com.atollic.truestudio.lib.release.525492705" name="Release" parent="com.atollic.truestudio.lib.release">
+				<configuration artifactExtension="a" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.staticLib" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.staticLib" cleanCommand="rm -f" description="" id="com.atollic.truestudio.lib.release.525492705" name="Release" parent="com.atollic.truestudio.lib.release" postbuildStep="D:\Programs\BNI\BuildNumberInc.exe -v ..\src\Board\versionBase.h Base_SW_VER_BUILD">
 					<folderInfo id="com.atollic.truestudio.lib.release.525492705." name="/" resourcePath="">
 						<toolChain id="com.atollic.truestudio.lib.release.toolchain.1235592763" name="Atollic ARM Tools" superClass="com.atollic.truestudio.lib.release.toolchain">
 							<option id="com.atollic.truestudio.toolchain_options.mcu.1887304583" name="Microcontroller" superClass="com.atollic.truestudio.toolchain_options.mcu" useByScannerDiscovery="false" value="STM32L051K8" valueType="string"/>
@@ -147,7 +147,7 @@
 									<listOptionValue builtIn="false" value="STM32L051xx"/>
 								</option>
 								<option id="com.atollic.truestudio.gcc.cstandard.731129066" name="C standard" superClass="com.atollic.truestudio.gcc.cstandard" useByScannerDiscovery="false" value="com.atollic.truestudio.gcc.cstandard.c1x" valueType="enumerated"/>
-								<option id="com.atollic.truestudio.gcc.warnings.extra.1164408529" superClass="com.atollic.truestudio.gcc.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.atollic.truestudio.gcc.warnings.extra.1164408529" name="Enable extra warning flags" superClass="com.atollic.truestudio.gcc.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<inputType id="com.atollic.truestudio.gcc.input.377029697" superClass="com.atollic.truestudio.gcc.input"/>
 							</tool>
 							<tool id="com.atollic.truestudio.ld.base.1615316262" name="C Linker" superClass="com.atollic.truestudio.ld.base"/>
@@ -172,7 +172,7 @@
 									<listOptionValue builtIn="false" value="STM32L051xx"/>
 								</option>
 								<option id="com.atollic.truestudio.gpp.cppstandard.867814648" name="C++ standard" superClass="com.atollic.truestudio.gpp.cppstandard" useByScannerDiscovery="false" value="com.atollic.truestudio.gpp.cppstandard.cpp0x" valueType="enumerated"/>
-								<option id="com.atollic.truestudio.gpp.warnings.extra.1081635847" superClass="com.atollic.truestudio.gpp.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.atollic.truestudio.gpp.warnings.extra.1081635847" name="Enable extra warning flags" superClass="com.atollic.truestudio.gpp.warnings.extra" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<inputType id="com.atollic.truestudio.gpp.input.1300076852" superClass="com.atollic.truestudio.gpp.input"/>
 							</tool>
 							<tool id="com.atollic.truestudio.ldcc.base.1160221630" name="C++ Linker" superClass="com.atollic.truestudio.ldcc.base"/>
