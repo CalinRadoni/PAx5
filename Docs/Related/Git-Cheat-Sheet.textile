@@ -3,17 +3,17 @@ h1. Quick start
 h2. Start
 
 Clone an existing project:
-bc.
-$ git clone /path/to/repository                 # create a working copy of a local repository
-$ git clone username@host:/path/to/repository   # or of a remote repository
+
+bc. git clone /path/to/repository                 # create a working copy of a local repository
+git clone username@host:/path/to/repository   # or of a remote repository
 
 or start with a new one:
-bc.
-$ cd project/
-$ git init                  # initializes the repository
-$ git add --all             # add those 'unknown' files
-$ git rm --cached <file>... # undo, in case you forgot .gitignore, and you do not want to start over by removing the .git directory
-$ git commit                # commit all changes, edit changelog entry
+
+bc. cd project/
+git init                  # initializes the repository
+git add --all             # add those 'unknown' files
+git rm --cached <file>... # undo, in case you forgot .gitignore, and you do not want to start over by removing the .git directory
+git commit                # commit all changes, edit changelog entry
 
 h2. Simple operations
 
@@ -56,8 +56,7 @@ h3. Undoing
 
 h3. Inspect
 
-bc.
-git log
+bc. git log
 git log --oneline
 git status
 git show-ref
@@ -65,8 +64,8 @@ git show-ref
 h3. Details for log
 
 Add:
-* *--branches* to see all branches
-* *--all* to see all branches including remote ones
+* @--branches@ to see all branches
+* @--all@ to see all branches including remote ones
 
 @git log --graph --oneline --decorate@
 @git log --graph --decorate@
@@ -123,8 +122,6 @@ To see the conflicts:
 
 h3. Remoting
 
-Add this: https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
-
 @git remote -v@ shows configured remote servers
 @git remote show <remoteShortName>@ shows informations about the remote identified with @<remoteShortName>@
 @git remote add <shortName> <url>@ adds a remote server and sets a shortname to acces it easily
@@ -153,15 +150,15 @@ For a more elaborate usage see the man page for "git bundle":https://git-scm.com
 h2. Repository on USB stick
 
 On USB stick:
-bc.
-mkdir someRepo.git
+
+bc. mkdir someRepo.git
 cd someRepo.git
 git init --bare
 
-Create a remote repository for the USB stick
+Create a remote repository for the USB stick with:
 @git remote add usbRepo file:///path/to/USBstick/someRepo.git@
 (on Windows: @git remote add usbRepo file://H:\someRepo.git\@)
-and push to it
+and push to it:
 @git push usbRepo@
 (first time, if no upstream error is generated, use: @git push --set-upstream master@)
 
@@ -177,11 +174,11 @@ Create an empty repository on GitHub by clicking the *New Repository* button and
 - *make sure* that _Add a license_ is set to *None*
 - click the *Create repository* button.
 
-Add a remote named @origin@ at the url of the new repository and push the local branch there
-Example:
-bc.
-git remote add origin https://github.com/CalinRadoni/PAx5.git
-git push -u origin master
+Add a remote named @GitHub@ at the url of the new repository and push the local branch there.
+**Example:**
+
+bc. git remote add GitHub https://github.com/CalinRadoni/PAx5.git
+git push -u GitHub master
 
 h1. Links
 
