@@ -27,6 +27,7 @@ FILEID(6)
 #define LOG_CODE_WTimeout   2 // data = slaveAddress
 #define LOG_CODE_CRTimeout  3 // data = slaveAddress
 #define LOG_CODE_CWTimeout  4 // data = slaveAddress
+#define LOG_CODE_TTimeout   5 // data = slaveAddress
 #define LOG_CODE_IntHandler 9 // data = (uint16_t)intStatus, where intStatus = I2C1->ISR at the entry of the interrupt handler
 
 // -----------------------------------------------------------------------------
@@ -135,7 +136,7 @@ CPU_I2C::Status CPU_I2C::Test(uint8_t slaveAddr)
 		if((sysTickCnt - timeStart) >= I2C_TransferTimeout){
 			status = Status::Timeout;
 			transferDone = true;
-			hwLogger.AddEntry(FileID, LOG_CODE_WTimeout, (uint16_t)slaveAddr);
+			hwLogger.AddEntry(FileID, LOG_CODE_TTimeout, (uint16_t)slaveAddr);
 		}
 	}
 
@@ -246,13 +247,26 @@ CPU_I2C::Status CPU_I2C::WriteAndRead(uint8_t slaveAddr, uint8_t wrCnt, uint8_t 
 
 	if(status != Status::OK) return status;
 
+	transferDone = false;
 	buffIdx = 0;
 	buffLen = rdCnt;
 
 	// Set slave address, read transfer, number of bytes to read, autoend
-	I2C1->CR2 = I2C_CR2_AUTOEND | I2C_CR2_RD_WRN | (buffLen << 16) | (slaveAddr << 1);
+	//I2C1->CR2 = I2C_CR2_AUTOEND | I2C_CR2_RD_WRN | (buffLen << 16) | (slaveAddr << 1);
+	I2C1->CR2 = I2C_CR2_RD_WRN | (buffLen << 16) | (slaveAddr << 1);
 
 	I2C1->CR2 |= I2C_CR2_START;
+
+	timeStart = sysTickCnt;
+	while((I2C1->ISR & I2C_ISR_TC) != I2C_ISR_TC) {
+		if((sysTickCnt - timeStart) >= I2C_TransferTimeout){
+			status = Status::Timeout;
+			transferDone = true;
+			hwLogger.AddEntry(FileID, LOG_CODE_CWTimeout, (uint16_t)slaveAddr);
+		}
+	}
+
+	I2C1->CR2 |= I2C_CR2_STOP;
 
 	timeStart = sysTickCnt;
 	while(!transferDone) {
