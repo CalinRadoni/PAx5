@@ -71,6 +71,8 @@ DEV_TSL2561::DEV_TSL2561() {
 	startTime     = sysTickCnt;
 	waitTime      = WaitTime_402;
 	intGain       = RegTiming_Gain1x;
+
+	rawLight = 0; rawIR = 0;
 }
 
 DEV_TSL2561::~DEV_TSL2561() {
@@ -106,7 +108,7 @@ DEV_TSL2561::Status DEV_TSL2561::Check(Address addr)
 	return Status::OK;
 }
 
-DEV_TSL2561::Status DEV_TSL2561::Set(Address addr, IntegrationTime time, bool gain16x)
+DEV_TSL2561::Status DEV_TSL2561::Set(Address addr, IntegrationTime time, bool gain16x, bool intEnable)
 {
 	switch(addr){
 		case Address::AddressLow_x29:   sensorAddress = 0x29; break;
@@ -118,6 +120,10 @@ DEV_TSL2561::Status DEV_TSL2561::Set(Address addr, IntegrationTime time, bool ga
 		return Status::IntfErr;
 
 	if(SetTimeAndGain(time, gain16x) != Status::OK)
+		return Status::IntfErr;
+
+	ClearIntStatus();
+	if(EnableLevelInterrupt(intEnable) != Status::OK)
 		return Status::IntfErr;
 
 	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerDown) != CPU_I2C::Status::OK)
@@ -152,6 +158,21 @@ DEV_TSL2561::Status DEV_TSL2561::SetTimeAndGain(IntegrationTime time, bool gain1
 	return Status::OK;
 }
 
+DEV_TSL2561::Status DEV_TSL2561::EnableLevelInterrupt(bool intEnable)
+{
+	uint8_t intReq = intEnable ? RegInt_IntLevel : RegInt_IntDisabled;
+
+	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegInterrupt, intReq) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
+
+	return Status::OK;
+}
+
+bool DEV_TSL2561::ClearIntStatus(void)
+{
+	return (sI2C.WriteByte(sensorAddress, RegCommand_ClearInt) == CPU_I2C::Status::OK);
+}
+
 // -----------------------------------------------------------------------------
 
 DEV_TSL2561::Status DEV_TSL2561::WakeUp(void)
@@ -165,6 +186,9 @@ DEV_TSL2561::Status DEV_TSL2561::WakeUp(void)
 
 DEV_TSL2561::Status DEV_TSL2561::Sleep(void)
 {
+	if(sI2C.WriteByte(sensorAddress, RegCommand_ClearInt) != CPU_I2C::Status::OK)
+		return Status::IntfErr;
+
 	if(sI2C.Write2Bytes(sensorAddress, RegCommand_Cmd | RegControl, RegControl_PowerDown) != CPU_I2C::Status::OK)
 		return Status::IntfErr;
 
@@ -360,12 +384,11 @@ uint32_t DEV_TSL2561::GetLux(Address addr)
 	uint32_t res;
 
 	// try 101ms and 16x
-
-	if(Set(addr, IntegrationTime::IntegrationTime_101ms, true) != Status::OK)
+	if(Set(addr, IntegrationTime::IntegrationTime_101ms, true, false) != Status::OK)
 		return Return_Error;
-	if(WakeUp() != Status::OK)
-		return Return_Error;
+	if(WakeUp() != Status::OK) return Return_Error;
 	while(!DataIsReady()) { /* wait */ }
+	if(!ReadData()){ Sleep(); return Return_Error; }
 	if(!Clipping()){
 		res = ConvertInLux();
 		Sleep();
@@ -377,11 +400,9 @@ uint32_t DEV_TSL2561::GetLux(Address addr)
 		Sleep();
 		return Return_Error;
 	}
-	if(!Restart()){
-		Sleep();
-		return Return_Error;
-	}
+	if(!Restart()){ Sleep(); return Return_Error; }
 	while(!DataIsReady()) { /* wait */ }
+	if(!ReadData()){ Sleep(); return Return_Error; }
 	if(!Clipping()){
 		res = ConvertInLux();
 		Sleep();
@@ -393,11 +414,9 @@ uint32_t DEV_TSL2561::GetLux(Address addr)
 		Sleep();
 		return Return_Error;
 	}
-	if(!Restart()){
-		Sleep();
-		return Return_Error;
-	}
+	if(!Restart()){ Sleep(); return Return_Error; }
 	while(!DataIsReady()) { /* wait */ }
+	if(!ReadData()){ Sleep(); return Return_Error; }
 	if(!Clipping()){
 		res = ConvertInLux();
 		Sleep();
@@ -409,11 +428,9 @@ uint32_t DEV_TSL2561::GetLux(Address addr)
 		Sleep();
 		return Return_Error;
 	}
-	if(!Restart()){
-		Sleep();
-		return Return_Error;
-	}
+	if(!Restart()){ Sleep(); return Return_Error; }
 	while(!DataIsReady()) { /* wait */ }
+	if(!ReadData()){ Sleep(); return Return_Error; }
 	if(!Clipping()){
 		res = ConvertInLux();
 		Sleep();

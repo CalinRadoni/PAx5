@@ -24,13 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace PAx5 {
 
 /**
- * From TAOS059N - MARCH 2009, page 19:
- * After applying VDD , the device will initially be in the power-down
- * state. To operate the device, issue a command to access the CONTROL
- * register followed by the data value 03h to power up the device. At this
- * point, both ADC channels will begin a conversion at the default
- * integration time of 400 ms. After 400 ms, the conversion results will
- * be available in the DATA0 and DATA1 registers.
+ * Calling the function DEV_TSL2561#GetLux is enough to get data.
  */
 
 class DEV_TSL2561
@@ -72,10 +66,27 @@ public:
 	 * After applying VDD:
 	 * - Integration time is 402 ms
 	 * - gain is 1x
+	 *
+	 * \note This function leaves the sensor in sleep mode.
+	 *
+	 * \param addr      is the I2C address of the sensor
+	 * \param time      is the integration time
+	 * \param gain16x   true/false means gain16x/gain1x
+	 * \param intEnable enable level interrupt for every ADC conversion
+	 *
+	 * \warning If you enabled interrupts, remember to call #ClearIntStatus to clear
+	 *          the interrupt status flag.
 	 */
-	DEV_TSL2561::Status Set(Address, IntegrationTime, bool gain16x);
+	DEV_TSL2561::Status Set(Address, IntegrationTime, bool gain16x, bool intEnable);
 
 	DEV_TSL2561::Status SetTimeAndGain(IntegrationTime, bool gain16x);
+
+	/**
+	 * \warning call #ClearIntStatus to clear the interrupt status.
+	 */
+	DEV_TSL2561::Status EnableLevelInterrupt(bool intEnable);
+
+	bool ClearIntStatus(void);
 
 	/**
 	 * Wakes up the sensor.
@@ -83,6 +94,10 @@ public:
 	 */
 	DEV_TSL2561::Status WakeUp(void);
 
+	/**
+	 * Clears the interrupt status flag then
+	 * put the sensor to sleep mode
+	 */
 	DEV_TSL2561::Status Sleep(void);
 
 	/**
@@ -147,6 +162,9 @@ public:
 	 *         0xFFFE if error
 	 */
 	uint32_t GetLux(Address);
+
+	uint32_t GetRawLight(void) { return rawLight; };
+	uint32_t GetRawIR(void)    { return rawIR; };
 
 private:
 	uint8_t sensorAddress;

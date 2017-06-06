@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpu_CRC.h"
 #include "cpu_DMA.h"
 #include "cpu_GPIO.h"
+#include "dev_TSL2561.h"
 
 #include "Enc_ChaCha20.h"
 
@@ -63,15 +64,16 @@ void BoardTester::InteractiveTest(void)
 	sTextOutput.FormatAndOutputString("\t3. ADC\r\n");
 	sTextOutput.FormatAndOutputString("\t4. I2C\r\n");
 	sTextOutput.FormatAndOutputString("\t5. I2C - HIH Sensor\r\n");
-	sTextOutput.FormatAndOutputString("\t6. I2C Slave\r\n");
-	sTextOutput.FormatAndOutputString("\t7. WS2812 connected to PB5\r\n");
-	sTextOutput.FormatAndOutputString("\t8. Encryption\r\n");
-	sTextOutput.FormatAndOutputString("\t9. FLASH Programming !\r\n");
-	sTextOutput.FormatAndOutputString("\tA. EEPROM Programming\r\n");
-	sTextOutput.FormatAndOutputString("\tB. External FLASH Programming\r\n");
-	sTextOutput.FormatAndOutputString("\tC. CRC32\r\n");
-	sTextOutput.FormatAndOutputString("\tD. Comm.Protocol packets\r\n");
-	sTextOutput.FormatAndOutputString("\tE. Copy: for loop vs DMA\r\n");
+	sTextOutput.FormatAndOutputString("\t6. I2C - TSL2561\r\n");
+	sTextOutput.FormatAndOutputString("\t7. I2C Slave\r\n");
+	sTextOutput.FormatAndOutputString("\t8. WS2812 connected to PB5\r\n");
+	sTextOutput.FormatAndOutputString("\tA. Encryption\r\n");
+	sTextOutput.FormatAndOutputString("\tB. FLASH Programming !\r\n");
+	sTextOutput.FormatAndOutputString("\tC. EEPROM Programming\r\n");
+	sTextOutput.FormatAndOutputString("\tD. External FLASH Programming\r\n");
+	sTextOutput.FormatAndOutputString("\tE. CRC32\r\n");
+	sTextOutput.FormatAndOutputString("\tF. Comm.Protocol packets\r\n");
+	sTextOutput.FormatAndOutputString("\tG. Copy: for loop vs DMA\r\n");
 	sTextOutput.FormatAndOutputString("\tz. Show HW Log\r\n");
 	sTextOutput.FormatAndOutputString("\tx. Clear HW Log\r\n");
 	sTextOutput.FormatAndOutputString("\r\n");
@@ -92,20 +94,21 @@ void BoardTester::InteractiveTest(void)
 		case '3': TestADC(); break;
 		case '4': TestI2C(); break;
 		case '5': TestI2C_HIH(); break;
-		case '6': TestI2CSlave(); break;
-		case '7': TestWS2812(); break;
+		case '6': TestI2C_TSL2561(); break;
+		case '7': TestI2CSlave(); break;
+		case '8': TestWS2812(); break;
 
-		case '8': TestEcryption(); break;
+		case 'A': TestEcryption(); break;
 
-		case '9': TestFLASHProg(); break;
-		case 'A': TestEEPROMProg(); break;
-		case 'B': TestExtFlash(); break;
+		case 'B': TestFLASHProg(); break;
+		case 'C': TestEEPROMProg(); break;
+		case 'D': TestExtFlash(); break;
 
-		case 'C': TestCRC(); break;
+		case 'E': TestCRC(); break;
 
-		case 'D': TestPAWPackets(); break;
+		case 'F': TestPAWPackets(); break;
 
-		case 'E': TestCopy(); break;
+		case 'G': TestCopy(); break;
 
 		case 'z': ShowHWLog(); break;
 		case 'x': ClearHWLog(); break;
@@ -365,8 +368,7 @@ void BoardTester::TestI2C(void)
 	sI2C.Enable();
 	sTextOutput.InitBuffer();
 	for(addr = 0; addr < 128; addr++){
-		sI2C.buffLen = 0;
-		res = sI2C.Write(addr);
+		res = sI2C.Test(addr);
 		switch(res) {
 			case CPU_I2C::Status::OK:
 				sTextOutput.FormatAndOutputString("Found a device at address 0x%2x\r\n", addr);
@@ -407,7 +409,7 @@ void BoardTester::TestI2C_HIH(void)
 			sTextOutput.FormatAndOutputString("ReadInit failed (code %d) !\r\n", res);
 			sTextOutput.Flush();
 			round++;
-			Delay(1000);
+			Delay(100);
 		}
 		else{
 			dataOK = false;
@@ -437,13 +439,51 @@ void BoardTester::TestI2C_HIH(void)
 	sI2C.Disable();
 }
 
-volatile uint8_t TestI2CSlaveDataIn, TestI2CSlaveDataLen, TestI2CSlaveDataRX, TestI2CSlaveDataTX;
+void BoardTester::TestI2C_TSL2561(void)
+{
+	uint32_t ts, te, val;
+	uint8_t round;
+	DEV_TSL2561 tslSensor;
+
+	sI2C.Enable();
+	sTextOutput.InitBuffer();
+
+	round = 0;
+	while(round < 10){
+		ts = sysTickCnt;
+		val = tslSensor.GetLux(DEV_TSL2561::Address::AddressFloat_x39);
+		te = sysTickCnt - ts;
+		sTextOutput.FormatAndOutputString("Elapsed %d ms, ", te);
+
+		sTextOutput.FormatAndOutputString("raw values %d %d, ", tslSensor.GetRawLight(), tslSensor.GetRawIR());
+
+		switch(val){
+		case 0xFFFE:
+			sTextOutput.FormatAndOutputString("error!\r\n");
+			break;
+		case 0xFFFF:
+			sTextOutput.FormatAndOutputString("clipping\r\n");
+			break;
+		default:
+			sTextOutput.FormatAndOutputString("converted value is %d Lux\r\n", val);
+			break;
+		}
+		sTextOutput.Flush();
+
+		round++;
+	}
+
+	sI2C.Disable();
+}
+
+volatile uint8_t TestI2CSlaveDataIn, TestI2CSlaveDataLen;
+volatile bool TestI2CSlaveDataRX, TestI2CSlaveDataTX;
 void TestI2CSlaveReceive(uint8_t rxLen)
 {
 	TestI2CSlaveDataLen = rxLen;
 	TestI2CSlaveDataIn = sI2C.buffer[0];
 
-	TestI2CSlaveDataRX++;
+	TestI2CSlaveDataRX = true;
 }
 void TestI2CSlaveRequest(void)
 {
@@ -451,9 +491,8 @@ void TestI2CSlaveRequest(void)
 
 	for(i = 0; i < I2CBufferLen; i++)
 		sI2C.buffer[i] = TestI2CSlaveDataIn + i + 1;
-	sI2C.buffLen = I2CBufferLen;
 
-	TestI2CSlaveDataTX++;
+	TestI2CSlaveDataTX = true;
 }
 void BoardTester::TestI2CSlave(void)
 {
@@ -467,26 +506,26 @@ void BoardTester::TestI2CSlave(void)
 	sTextOutput.Flush();
 
 	TestI2CSlaveDataIn = '0';
-	TestI2CSlaveDataRX = 0;
-	TestI2CSlaveDataTX = 0;
+	TestI2CSlaveDataRX = false;
+	TestI2CSlaveDataTX = false;
 	sI2C.onReceive(TestI2CSlaveReceive);
 	sI2C.onRequest(TestI2CSlaveRequest);
 
 	while(TestI2CSlaveDataIn != 'x'){
-		if(TestI2CSlaveDataRX != 0){
+		if(TestI2CSlaveDataRX){
 			sTextOutput.FormatAndOutputString("RX[%d]: ", TestI2CSlaveDataLen);
 			for(i = 0; i < TestI2CSlaveDataLen; i++)
 				sTextOutput.FormatAndOutputString("0x%2x ", sI2C.buffer[i]);
 			sTextOutput.FormatAndOutputString("\r\n");
-			TestI2CSlaveDataRX = 0;
+			TestI2CSlaveDataRX = false;
 			sTextOutput.Flush();
 		}
-		if(TestI2CSlaveDataTX != 0){
+		if(TestI2CSlaveDataTX){
 			sTextOutput.FormatAndOutputString("TX[ ]: ");
 			for(i = 0; i < 3; i++)
 				sTextOutput.FormatAndOutputString("0x%2x ", sI2C.buffer[i]);
 			sTextOutput.FormatAndOutputString("...\r\n\r\n");
-			TestI2CSlaveDataTX = 0;
+			TestI2CSlaveDataTX = false;
 			sTextOutput.Flush();
 		}
 	}

@@ -42,6 +42,7 @@ public:
 	void TestADC(void);
 	void TestI2C(void);
 	void TestI2C_HIH(void);
+	void TestI2C_TSL2561(void);
 	void TestI2CSlave(void);
 	void TestWS2812(void);
 	void TestEcryption(void);
