@@ -4,6 +4,7 @@
 # Hints for GitHub linguist library
 Docs/* linguist-documentation
 SW/PAx5_Base/Drivers/* linguist-vendored
+HW/Small-Add-ons/* linguist-vendored
 
 # source files
 *.c text
