@@ -69,7 +69,7 @@ protected:
 	void ReadDeviceMemory(void);
 };
 
-extern CPU_Info sCPU;
+extern CPU_Info sCPUInfo;
 
 }
 #endif /* cpu_INFO_H_ */

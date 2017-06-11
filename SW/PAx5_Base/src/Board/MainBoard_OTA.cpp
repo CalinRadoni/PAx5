@@ -142,7 +142,7 @@ MainBoardOTA::MainBoardOTA()
 
 void MainBoardOTA::InternalInit(void)
 {
-	internalFlashSize = sCPU.GetFlashMemSize();  ///< memory size in Kbytes
+	internalFlashSize = sCPUInfo.GetFlashMemSize();  ///< memory size in Kbytes
 	internalFlashSize = internalFlashSize << 10; ///< memory size in bytes
 
 	uint32_t var = internalFlashSize;

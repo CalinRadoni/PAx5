@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace PAx5 {
 // -----------------------------------------------------------------------------
 
-CPU_Info sCPU;
+CPU_Info sCPUInfo;
 
 // -----------------------------------------------------------------------------
 
