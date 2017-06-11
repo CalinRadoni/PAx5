@@ -162,29 +162,29 @@ void BoardTester::TestBoard(void)
 	sTextOutput.Flush();
 
 	// CPU Info
-	sCPU.ReadInfo();
+	sCPUInfo.ReadInfo();
 	sTextOutput.FormatAndOutputString("CPU Info:\r\n");
 #ifdef STM32L051xx
 	sTextOutput.FormatAndOutputString("  - STM32L051xx");
 #else
 	sTextOutput.FormatAndOutputString("  - microcontroller unknown");
 #endif
-	sTextOutput.FormatAndOutputString("  - Device category %d, Rev.%c\r\n", sCPU.GetDevID(), sCPU.GetRevID());
-	sTextOutput.FormatAndOutputString("  - Memory: %d kB\r\n", sCPU.GetFlashMemSize());
-	sTextOutput.FormatAndOutputString("  - Unique ID: %8x %8x %8x\r\n", sCPU.uniqueID[0], sCPU.uniqueID[1], sCPU.uniqueID[2]);
+	sTextOutput.FormatAndOutputString("  - Device category %d, Rev.%c\r\n", sCPUInfo.GetDevID(), sCPUInfo.GetRevID());
+	sTextOutput.FormatAndOutputString("  - Memory: %d kB\r\n", sCPUInfo.GetFlashMemSize());
+	sTextOutput.FormatAndOutputString("  - Unique ID: %8x %8x %8x\r\n", sCPUInfo.uniqueID[0], sCPUInfo.uniqueID[1], sCPUInfo.uniqueID[2]);
 
-	dc = sCPU.Get_CPUID_Implementer();
+	dc = sCPUInfo.Get_CPUID_Implementer();
 	sTextOutput.FormatAndOutputString("CPUID:\r\n");
 	if(dc == 0x41) sTextOutput.FormatAndOutputString("  - Implementer ARM\r\n");
 	else sTextOutput.FormatAndOutputString("  - Implementer unknown %x\r\n", dc);
-	dc = sCPU.Get_CPUID_Architecture();
+	dc = sCPUInfo.Get_CPUID_Architecture();
 	if(dc == 0x0C) sTextOutput.FormatAndOutputString("  - Architecture ARMv6-M\r\n");
 	else sTextOutput.FormatAndOutputString("  - Unknown architecture %x\r\n", dc);
-	dc = sCPU.Get_CPUID_PartNo();
+	dc = sCPUInfo.Get_CPUID_PartNo();
 	if(dc == 0x0C60) sTextOutput.FormatAndOutputString("  - STM32L0 Cortex-M0+\r\n");
 	else sTextOutput.FormatAndOutputString("  - Unknown part number %x\r\n", dc);
-	dc = sCPU.Get_CPUID_Variant(); 	sTextOutput.FormatAndOutputString("  - Revision %d, ", dc);
-	dc = sCPU.Get_CPUID_Revision(); sTextOutput.FormatAndOutputString("patch %d\r\n", dc);
+	dc = sCPUInfo.Get_CPUID_Variant(); 	sTextOutput.FormatAndOutputString("  - Revision %d, ", dc);
+	dc = sCPUInfo.Get_CPUID_Revision(); sTextOutput.FormatAndOutputString("patch %d\r\n", dc);
 
 	sTextOutput.FormatAndOutputString("\r\n");
 	sTextOutput.Flush();

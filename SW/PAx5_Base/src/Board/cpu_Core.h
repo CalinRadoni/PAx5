@@ -1,0 +1,173 @@
+/**
+This file is part of PAx5 (https://github.com/CalinRadoni/PAx5)
+Copyright (C) 2016, 2017 by Calin Radoni
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef cpu_CORE_H_
+#define cpu_CORE_H_
+
+#include "MainBoard_Base.h"
+
+namespace PAx5 {
+
+class CPU_Core {
+public:
+	CPU_Core();
+	virtual ~CPU_Core();
+
+	enum class Frequency : uint8_t {
+		MSI_65k,   //  65.536 kHz, MSI, VR3, NVM 0 wait-state
+		MSI_131k,  // 131.072 kHz, MSI, VR3, NVM 0 wait-state
+		MSI_262k,  // 262.144 kHz, MSI, VR3, NVM 0 wait-state
+		MSI_524k,  // 524.288 kHz, MSI, VR3, NVM 0 wait-state
+		MSI_1M,    // 1.048 MHz, MSI, VR3, NVM 0 wait-state
+		MSI_2M1,   // 2.097 MHz, MSI, VR3, NVM 0 wait-state
+		MSI_4M2,   // 4.194 MHz, MSI, VR3, NVM 0 wait-state
+		HSI16_16M, // 16 MHz, HSI + PLL, VR2, NVM 1 wait-state
+		HSI16_32M,  // 32 MHz, HSI + PLL, VR1, NVM 1 wait-state
+		Unknown
+	};
+
+	enum class VoltageRange : uint8_t {
+		VR1, // 1.8 V
+		VR2, // 1.5 V
+		VR3  // 1.2 V
+	};
+
+	/**
+	 * \brief Created to be called after startup, configures system clock to 32 MHz using HSI
+	 *
+	 * \details This function:
+	 * - enable power interface clock
+	 * - set voltage regulator's range to VR1
+	 * - enable 1 wait-state latency for NVM
+	 * - enable HSI and HSI divided by 4
+	 * - enable PLL for HSI, multiply with 16 and divide with 2
+	 * - select PLL as system clock.
+	 *
+	 * \note Even if the function fails, #voltageRange and #frequency have the correct values.
+	 *
+	 * \return 0 OK
+	 *         1 HSI Timeout
+	 *         2 PLL Timeout
+	 *         3 Clock switch timeout
+	 */
+	uint8_t Startup_SetClock(void);
+
+	/**
+	 * \brief Change the system clock and frequency
+	 *
+	 * \details After startup, MSI at 2.1MHz is used as system clock.
+	 * This function changes the frequency and clock source and set:
+	 * - the internal voltage regulator
+	 * - the required wait states for NVM
+	 * - the system timer
+	 *
+	 * \note Changing the frequency to MSI_xxx will disable HSI and PLL.
+	 *
+	 * \warning Changing the system clock's frequency affects at least:
+	 * - UART, I2C and SPI modules
+	 * - Timers
+	 * To use them you may need to reconfigure them.
+	 */
+	bool SetFrequency(Frequency);
+
+	/**
+	 * \brief Returns the frequency set by #SetFrequency function
+	 */
+	Frequency GetFrequency(void);
+
+	/**
+	 * \brief Prepare the core for entering the Sleep mode
+	 *
+	 * \details In Sleep mode, all I/O pins keep the same state as in Run mode.
+	 * CPU clock is off but the mode has no effect on other clocks or analog clock sources.
+	 * If voltage regulator is in sleep mode the wake up time increases.
+	 *
+	 * Send Event on Pending is cleared so only enabled interrupts or events can
+	 * wakeup the processor, disabled interrupts are excluded.
+	 *
+	 * NO sleep-on-exit when returning from Handler mode to Thread mode.
+	 *
+	 * \param voltageRegulatorSleep Puts the voltage regulator in sleep mode if true.
+	 *
+	 */
+	void ConfigureSleep(bool voltageRegulatorSleep);
+
+	void ConfigureStop(bool voltageRegulatorSleep);
+
+	void ConfigureStandby(void);
+
+	void ClearStanbyFlag(void);
+	void ClearWakeupFlag(void);
+
+	/*
+	 * \brief Check if the voltage regulator is still in low-power mode
+	 *
+	 * From RM0377, Power control/status register, bit REGLPF:
+	 * Polling is recommended to wait for the regulator Main mode.
+	 */
+	bool IsVoltageRegulatorInLowPowerMode(void);
+
+protected:
+	Frequency frequency;
+	VoltageRange voltageRange;
+
+	/**
+	 * Returns true if wait-state is needed for current
+	 * #frequency and #voltageRange
+	 */
+	bool NVM_WaitStateRequired(void);
+
+	void EnableNVMWaitState(bool);
+
+	/**
+	 * Check if the voltage range passed as parameter is allowed
+	 * for current #frequency
+	 */
+	bool AllowedVoltageRange(VoltageRange);
+
+	void SetVoltageRange(VoltageRange);
+
+	/** Switch the system clock to MSI */
+	bool Clock_SwitchToMSI(void);
+
+	/**
+	 * Switch the system clock to HSI16 and calls
+	 * SysTick_Config to update the System Timer and its interrupt
+	 */
+	bool Clock_SwitchToHSI(void);
+
+	/** Switch the system clock to PLL */
+	bool Clock_SwitchToPLL(void);
+
+	bool Clock_EnableMSI(void);
+	bool Clock_DisableMSI(void);
+	bool Clock_EnableHSI(void);
+	bool Clock_EnableHSIdiv4(void);
+	bool Clock_DisableHSI(void);
+	bool Clock_EnablePLL(void);
+	bool Clock_DisablePLL(void);
+
+	bool SetFrequency_MSI(uint32_t);
+	bool SetFrequency_HSI16_16M(void);
+	bool SetFrequency_HSI16_32M(void);
+};
+
+extern CPU_Core sCPU;
+
+} /* namespace */
+#endif

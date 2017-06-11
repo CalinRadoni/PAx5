@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "MainBoard.h"
 
+#include "cpu_Core.h"
 #include "cpu_USART1.h"
 #include "cpu_Info.h"
 #include "cpu_SPI1.h"
@@ -131,14 +132,21 @@ MainBoard::Error MainBoard::InitializeBoard(BoardDefinion& boardDef)
 
 	brdErr = Error::OK;
 
-	// clock configured for 2MHz in SystemInit() function called from startup_stm32l0xx.s
-	SysTick_Config(2000); // 1ms
-	ConfigureClock();
+	// system clock is configured for MSI 2.1 MHz after startup
+	SysTick_Config(2100); // 1ms
+
+	uint8_t clkCfg = sCPU.Startup_SetClock();
+	switch(clkCfg){
+		case 0:  /* OK */ break;
+		case 1:  brdErr = Error::Clk_HSI_Timeout;     break;
+		case 2:  brdErr = Error::Clk_PLL_Timeout;     break;
+		case 3:  brdErr = Error::Clk_ClockSw_Timeout; break;
+		default: brdErr = Error::Clk_UnknownError;    break;
+	}
 	SystemCoreClockUpdate();
+	SysTick_Config(SystemCoreClock / 1000U);
 
 	if(brdErr == Error::OK){
-		SysTick_Config(32000); // 1ms
-
 		ConfigureGPIO();
 
 		if(boardCapabilities.Use_USART) {
@@ -210,64 +218,14 @@ void MainBoard::PeripheralsOff(void)
 
 // -----------------------------------------------------------------------------
 
-/** @brief Configure system clock to 32 MHz using HSI
- *
- * This function configures the system clock @32MHz and voltage scale 1
- * assuming the registers have their reset value before the call.
- * - POWER SCALE   = RANGE 1
- * - SYSTEM CLOCK  = PLL MUL16 DIV2
- * - PLL SOURCE    = HSI/4
- * - FLASH LATENCY = 1
- */
-void MainBoard::ConfigureClock(void)
+void MainBoard::Sleep(void)
 {
-	uint32_t tickstart;
+	//
+}
 
-	// Enable power interface clock
-	RCC->APB1ENR |= (RCC_APB1ENR_PWREN);
-
-	// Select voltage scale 1 (1.8V)
-	PWR->CR = (PWR->CR & ~(PWR_CR_VOS)) | PWR_CR_VOS_0;
-
-	// Select flash to be 1 wait-state (required for 32MHZ on voltage scale 1)
-	FLASH->ACR |= FLASH_ACR_LATENCY;
-
-	// Enable HSI and HSI divided by 4 ...
-	RCC->CR |= RCC_CR_HSION | RCC_CR_HSIDIVEN;
-	// ... and wait for HSI to be ready
-	tickstart = sysTickCnt;
-	while((RCC->CR & (RCC_CR_HSIRDY | RCC_CR_HSIDIVF)) != (RCC_CR_HSIRDY | RCC_CR_HSIDIVF)){
-		if((sysTickCnt - tickstart) > TIMEOUT_HSI){
-			brdErr = Error::HSI_Timeout;
-			hwLogger.AddEntry(FileID, LOG_CODE_CLOCK, 1);
-			return;
-		}
-	}
-
-	// Enable PLL for HSI, multiply by 16 and divided by 2, then start PLL ...
-	RCC->CFGR |= RCC_CFGR_PLLSRC_HSI | RCC_CFGR_PLLMUL16 | RCC_CFGR_PLLDIV2;
-	RCC->CR |= RCC_CR_PLLON;
-	// ... and wait for PLL to be ready
-	tickstart = sysTickCnt;
-	while((RCC->CR & RCC_CR_PLLRDY) == 0){
-		if ((sysTickCnt - tickstart) > TIMEOUT_PLL){
-			brdErr = Error::PLL_Timeout;
-			hwLogger.AddEntry(FileID, LOG_CODE_CLOCK, 2);
-			return;
-		}
-	}
-
-	// Select PLL as system clock ...
-	RCC->CFGR |= RCC_CFGR_SW_PLL;
-	// ... and wait for clock to switch on PLL
-	tickstart = sysTickCnt;
-	while((RCC->CFGR & RCC_CFGR_SWS_PLL) == 0){
-		if((sysTickCnt - tickstart ) > TIMEOUT_CLOCKSWITCH){
-			brdErr = Error::ClockSwitch_Timeout;
-			hwLogger.AddEntry(FileID, LOG_CODE_CLOCK, 3);
-			return;
-		}
-	}
+void MainBoard::Standby(void)
+{
+	//
 }
 
 // -----------------------------------------------------------------------------

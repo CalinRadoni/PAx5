@@ -79,12 +79,13 @@ public:
 
 	enum class Error : uint8_t
 	{
-		OK					= 0,
-		HSI_Timeout			= 1,
-		PLL_Timeout			= 2,
-		ClockSwitch_Timeout	= 3,
-		USART				= 4,
-		Radio               = 5,
+		OK                  = 0,
+		Clk_HSI_Timeout     = 1,
+		Clk_PLL_Timeout     = 2,
+		Clk_ClockSw_Timeout	= 3,
+		Clk_UnknownError    = 4,
+		USART				= 5,
+		Radio               = 6,
 		NotInitialized      = 31
 	};
 
@@ -113,13 +114,15 @@ public:
 	void PeripheralsOn(void);
 	void PeripheralsOff(void);
 
+	void Sleep(void);
+	void Standby(void);
+
 	void RadioIntFired(void);
 	void CheckRadioInterrupt(void);
 
 protected:
 	MainBoard::Error brdErr;
 
-	void ConfigureClock(void);
 	void ConfigureGPIO(void);
 	void ConfigureEXTI(void);
 	void ConfigureTIM6(void);
