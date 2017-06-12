@@ -120,6 +120,8 @@ public:
 	void RadioIntFired(void);
 	void CheckRadioInterrupt(void);
 
+	void HandlePushButtonInterrupt(void);
+
 protected:
 	MainBoard::Error brdErr;
 
@@ -131,6 +133,9 @@ protected:
 	void DisableTIM6(void);
 
 	volatile bool radioIntFired;
+
+	volatile bool swPushed;
+	volatile uint32_t swStart, swCounter;
 
 	BoardDefinion boardCapabilities;
 };

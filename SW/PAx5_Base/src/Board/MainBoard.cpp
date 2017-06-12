@@ -113,6 +113,8 @@ MainBoard::MainBoard()
 {
 	brdErr = Error::NotInitialized;
 	radioIntFired = false;
+	swPushed = false;
+	swStart = swCounter = 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -398,9 +400,9 @@ void MainBoard::ConfigureEXTI(void)
 	// PA is the source for EXTI8 interrupt
 	SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~(SYSCFG_EXTICR3_EXTI8)) | SYSCFG_EXTICR3_EXTI8_PA;
 
-	EXTI->IMR  = EXTI->IMR  | EXTI_IMR_IM8;     // enable Line 8
-	EXTI->RTSR = EXTI->RTSR | EXTI_RTSR_TR8;    // enable rising edge
-	EXTI->FTSR = EXTI->FTSR & ~(EXTI_FTSR_TR8); // disable falling edge
+	EXTI->IMR  = EXTI->IMR  | EXTI_IMR_IM8;  // enable Line 8
+	EXTI->RTSR = EXTI->RTSR | EXTI_RTSR_TR8; // enable rising edge
+	EXTI->FTSR = EXTI->FTSR | EXTI_FTSR_TR8; // enable falling edge
 
 	NVIC_SetPriority(EXTI4_15_IRQn, NVIC_PRIORITY_EXTI_4_15);
 	NVIC_EnableIRQ(EXTI4_15_IRQn);
@@ -454,6 +456,20 @@ void MainBoard::CheckRadioInterrupt(void)
 	}
 }
 
+void MainBoard::HandlePushButtonInterrupt(void)
+{
+	if((GPIOA->IDR & GPIO_IDR_ID8) == 0){
+		// switch is pressed
+		swStart = sysTickCnt;
+		swPushed = true;
+	}
+	else{
+		// switch is released
+		swPushed = false;
+		swCounter = sysTickCnt - swStart;
+	}
+}
+
 } /* namespace */
 
 // -----------------------------------------------------------------------------
@@ -462,7 +478,7 @@ void MainBoard::CheckRadioInterrupt(void)
 
 extern "C" void EXTI0_1_IRQHandler(void)
 {
-	// EXTI flags are cleared by writting 1 to them (as the manual says)
+	// EXTI flags are cleared by writing 1 to them (as the manual says)
 
 	if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
 		EXTI->PR = EXTI_PR_PR0;
@@ -481,11 +497,12 @@ extern "C" void EXTI0_1_IRQHandler(void)
 
 extern "C" void EXTI4_15_IRQHandler(void)
 {
-	// EXTI flags are cleared by writting 1 to them (as the manual says)
+	// EXTI flags are cleared by writing 1 to them (as the manual says)
 
 	if((EXTI->PR & EXTI_PR_PR8) == EXTI_PR_PR8){
 		EXTI->PR = EXTI_PR_PR8;
-		//exti8Rised = true;
+
+		PAx5::board.HandlePushButtonInterrupt();
 	}
 }
 
