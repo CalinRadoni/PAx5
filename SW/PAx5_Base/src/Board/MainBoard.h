@@ -51,6 +51,7 @@ public:
 	enum class BoardType : uint8_t
 	{
 		PAx5_BaseBoard,
+		PAx5_BaseBoardTester,
 		PAx5_EnvSensor,
 		PAx5_CPU
 	};
@@ -61,12 +62,15 @@ public:
 	bool ExtFLASH;
 	bool Radio_RFM69HW;
 	bool PowerPeripherals_PA3;
+	bool Use_WakeupTimer;
 
 	uint32_t PortA, PortB, PortC;
 
 	void SetByType(BoardType);
 
 	bool Use_SPI(void);
+
+	bool Use_RTC(void);
 
 protected:
 };
@@ -86,6 +90,8 @@ public:
 		Clk_UnknownError    = 4,
 		USART				= 5,
 		Radio               = 6,
+		RTC_Init            = 7,
+		WakeupTimer         = 8,
 		NotInitialized      = 31
 	};
 

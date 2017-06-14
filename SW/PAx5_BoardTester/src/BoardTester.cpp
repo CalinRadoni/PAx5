@@ -38,6 +38,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpu_DMA.h"
 #include "cpu_GPIO.h"
 #include "dev_TSL2561.h"
+#include "cpu_Core.h"
+#include "cpu_RTC.h"
 
 #include "Enc_ChaCha20.h"
 
@@ -74,6 +76,7 @@ void BoardTester::InteractiveTest(void)
 	sTextOutput.FormatAndOutputString("\tE. CRC32\r\n");
 	sTextOutput.FormatAndOutputString("\tF. Comm.Protocol packets\r\n");
 	sTextOutput.FormatAndOutputString("\tG. Copy: for loop vs DMA\r\n");
+	sTextOutput.FormatAndOutputString("\tH. Wakeup timer\r\n");
 	sTextOutput.FormatAndOutputString("\tz. Show HW Log\r\n");
 	sTextOutput.FormatAndOutputString("\tx. Clear HW Log\r\n");
 	sTextOutput.FormatAndOutputString("\r\n");
@@ -109,6 +112,8 @@ void BoardTester::InteractiveTest(void)
 		case 'F': TestPAWPackets(); break;
 
 		case 'G': TestCopy(); break;
+
+		case 'H': TestWakeupTimer(); break;
 
 		case 'z': ShowHWLog(); break;
 		case 'x': ClearHWLog(); break;
@@ -1041,4 +1046,22 @@ void BoardTester::TestPAWPackets(void)
 }
 
 // -----------------------------------------------------------------------------
+
+void BoardTester::TestWakeupTimer(void)
+{
+	sTextOutput.InitBuffer();
+
+	sTextOutput.FormatAndOutputString("Initialize the wakeup timer for ~ 10 seconds and wait for it ...\r\n");
+	sTextOutput.Flush();
+	sRTC.SetWakeupTimer(10);
+	while(!sRTC.rtcWakeUpFired){
+		/* wait */
+	}
+	sTextOutput.FormatAndOutputString("... done.\r\n");
+
+	sTextOutput.Flush();
+}
+
+// -----------------------------------------------------------------------------
+
 } /* namespace */

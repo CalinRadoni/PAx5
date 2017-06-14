@@ -52,6 +52,7 @@ public:
 	void TestCRC(void);
 	void TestPAWPackets(void);
 	void TestCopy(void);
+	void TestWakeupTimer(void);
 
 	void ShowHWLog(void);
 	void ClearHWLog(void);

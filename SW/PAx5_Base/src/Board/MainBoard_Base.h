@@ -26,13 +26,14 @@ namespace PAx5 {
 
 // -----------------------------------------------------------------------------
 
-#define NVIC_PRIORITY_SPIDMA     1
-#define NVIC_PRIORITY_EXTI_0_1   2 // radio, must be higher then NVIC_PRIORITY_SPIDMA !
-#define NVIC_PRIORITY_USART      3
-#define NVIC_PRIORITY_EXTI_4_15  3 // user switch
-#define NVIC_PRIORITY_TIM21      3 // for entropy
-#define NVIC_PRIORITY_ADC        3 // for ADC and ADC entropy
-#define NVIC_PRIORITY_I2C        3
+#define NVIC_PRIORIY_RTC         0U
+#define NVIC_PRIORITY_SPIDMA     1U
+#define NVIC_PRIORITY_EXTI_0_1   2U // radio, must be higher then NVIC_PRIORITY_SPIDMA !
+#define NVIC_PRIORITY_USART      3U
+#define NVIC_PRIORITY_EXTI_4_15  3U // user switch
+#define NVIC_PRIORITY_TIM21      3U // for entropy
+#define NVIC_PRIORITY_ADC        3U // for ADC and ADC entropy
+#define NVIC_PRIORITY_I2C        3U
 
 // -----------------------------------------------------------------------------
 

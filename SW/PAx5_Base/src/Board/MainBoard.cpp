@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpu_ADC.h"
 #include "cpu_I2C.h"
 #include "dev_LED.h"
+#include "cpu_RTC.h"
 
 namespace PAx5 {
 
@@ -70,10 +71,11 @@ BoardDefinion& BoardDefinion::operator=(const BoardDefinion& src)
 
 void BoardDefinion::SetByType(BoardType type)
 {
-	Use_USART     = true;
-	Use_I2C       = true; Use_I2C_Slave = false;
-	ExtFLASH      = true;
-	Radio_RFM69HW = true;
+	Use_USART       = true;
+	Use_I2C         = true; Use_I2C_Slave = false;
+	ExtFLASH        = true;
+	Radio_RFM69HW   = true;
+	Use_WakeupTimer = false;
 
 	PortC = 0x0000U;
 
@@ -92,10 +94,18 @@ void BoardDefinion::SetByType(BoardType type)
 		PortB = 0x00F8U; ///< PB3, PB4-PB7
 		break;
 
+	case BoardType::PAx5_BaseBoardTester:
+		PowerPeripherals_PA3 = false;
+		PortA = 0x9F0FU; ///< PA0-PA3, PA8-PA11, PA12, PA15
+		PortB = 0x00F8U; ///< PB3, PB4-PB7
+		Use_WakeupTimer = true;
+		break;
+
 	case BoardType::PAx5_EnvSensor:
 		PowerPeripherals_PA3 = true;
 		PortA = 0x9602U; ///< PA1, PA9, PA10, PA12, PA15
 		PortB = 0x0020U; ///< PB5
+		Use_WakeupTimer = true;
 		break;
 	}
 }
@@ -104,6 +114,12 @@ bool BoardDefinion::Use_SPI(void)
 {
 	if(Radio_RFM69HW) return true;
 	if(ExtFLASH)      return true;
+	return false;
+}
+
+bool BoardDefinion::Use_RTC(void)
+{
+	if(Use_WakeupTimer) return true;
 	return false;
 }
 
@@ -181,6 +197,22 @@ MainBoard::Error MainBoard::InitializeBoard(BoardDefinion& boardDef)
 			sRadio.Initialize();
 			if(sRadio.interfaceError)
 				brdErr = Error::Radio;
+		}
+
+	}
+
+	if(brdErr == Error::OK){
+		if(boardCapabilities.Use_RTC()){
+			if(!sRTC.InitializeRTC()){
+				brdErr = Error::RTC_Init;
+			}
+			else{
+				if(boardCapabilities.Use_WakeupTimer){
+					if(!sRTC.InitializeWakeupTimer()){
+						brdErr = Error::WakeupTimer;
+					}
+				}
+			}
 		}
 	}
 

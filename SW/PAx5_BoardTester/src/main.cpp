@@ -27,7 +27,7 @@ PAx5::BoardTester tester;
 int main(void)
 {
 	PAx5::BoardDefinion boardDefinition;
-	boardDefinition.SetByType(PAx5::BoardDefinion::BoardType::PAx5_BaseBoard);
+	boardDefinition.SetByType(PAx5::BoardDefinion::BoardType::PAx5_BaseBoardTester);
 
 	if(PAx5::board.InitializeBoard(boardDefinition) != PAx5::MainBoard::Error::OK){
 		PAx5::board.BlinkError();
