@@ -93,7 +93,7 @@ public:
 	/**
 	 * \brief Prepare the core for entering the Sleep mode
 	 *
-	 * \detail In Sleep mode, all I/O pins keep the same state as in Run mode.
+	 * \details In Sleep mode, all I/O pins keep the same state as in Run mode.
 	 * CPU clock is off but the mode has no effect on other clocks or analog clock sources.
 	 * If voltage regulator is in sleep mode the wake up time increases.
 	 *
@@ -115,7 +115,7 @@ public:
 	/**
 	 * \brief Enters the Stop mode
 	 *
-	 * \detail In Stop mode, all I/O pins keep the same state as in Run mode.
+	 * \details In Stop mode, all I/O pins keep the same state as in Run mode.
 	 *
 	 * After resuming Stop mode the frequency is set to previous value.
 	 *
@@ -146,7 +146,7 @@ public:
 	/**
 	 * \brief Enters the Standby mode
 	 *
-	 * \detail In Standby mode, all I/O pins are high impedance except the reset pin.
+	 * \details In Standby mode, all I/O pins are high impedance except the reset pin.
 	 * Exiting Standby mode is like a CPU reset.
 	 */
 	void EnterStandby(void);

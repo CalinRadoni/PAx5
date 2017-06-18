@@ -31,7 +31,7 @@ public:
 	/**
 	 * \brief Initialize RTC module
 	 *
-	 * \detail This function performs the following operations:
+	 * \details This function performs the following operations:
 	 * - turn on LSI and set it as the clock for RTC
 	 * - initialize RTC's prescaler
 	 * - enable RTC interrupt
@@ -41,7 +41,7 @@ public:
 	/**
 	 * \brief Disable RTC
 	 *
-	 * \detail Disables:
+	 * \details Disables:
 	 * - RTC interrupt
 	 * - wake up timer
 	 * - RTC clock
@@ -64,7 +64,7 @@ public:
 	/**
 	 * \brief Reset the wake up timer
 	 *
-	 * \detail Use the following formula to compute required ticks:
+	 * \details Use the following formula to compute required ticks:
 	 *
 	 * Wake up ticks = time[s] * 37000 / 128 / 290 - 1
 	 *
@@ -93,7 +93,7 @@ protected:
 	/**
 	 * \brief Initialize the RTC prescaler.
 	 *
-	 * \detail The prescaler is initialized for a low power consumption.
+	 * \details The prescaler is initialized for a low power consumption.
 	 * The asynchronous prescaler is set to max value, 127, and the synchronous
 	 * prescaler to 289. For 37kHz (the frequency of LSI) the resulting
 	 * frequency is ~ 0,996767 Hz.
