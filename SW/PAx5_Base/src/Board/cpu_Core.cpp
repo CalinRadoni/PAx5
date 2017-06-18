@@ -159,6 +159,10 @@ uint8_t CPU_Core::Startup_SetClock(void)
 	}
 
 	frequency = Frequency::HSI16_32M;
+
+	// disable MSI and do NOT wait for it
+	RCC->CR &= ~(RCC_CR_MSION);
+
 	return 0;
 }
 
@@ -234,7 +238,10 @@ void CPU_Core::SetVoltageRange(VoltageRange vr)
 bool CPU_Core::Clock_SwitchToMSI(void)
 {
 	// switch system clock to HSI
-	RCC->CFGR = (RCC->CFGR & (~(RCC_CFGR_SW))) | RCC_CFGR_SW_MSI;
+	uint32_t val = RCC->CFGR;
+	val &= ~(RCC_CFGR_SW);
+	val |= RCC_CFGR_SW_MSI;
+	RCC->CFGR = val;
 
 	// wait for system clock to switch
 	uint32_t tickstart = sysTickCnt;
@@ -251,7 +258,10 @@ bool CPU_Core::Clock_SwitchToMSI(void)
 bool CPU_Core::Clock_SwitchToHSI(void)
 {
 	// switch system clock to HSI
-	RCC->CFGR = (RCC->CFGR & (~(RCC_CFGR_SW))) | RCC_CFGR_SW_HSI;
+	uint32_t val = RCC->CFGR;
+	val &= ~(RCC_CFGR_SW);
+	val |= RCC_CFGR_SW_HSI;
+	RCC->CFGR = val;
 
 	// wait for system clock to switch
 	uint32_t tickstart = sysTickCnt;
@@ -271,7 +281,10 @@ bool CPU_Core::Clock_SwitchToHSI(void)
 bool CPU_Core::Clock_SwitchToPLL(void)
 {
 	// switch system clock to HSI
-	RCC->CFGR = (RCC->CFGR & (~(RCC_CFGR_SW))) | RCC_CFGR_SW_PLL;
+	uint32_t val = RCC->CFGR;
+	val &= ~(RCC_CFGR_SW);
+	val |= RCC_CFGR_SW_PLL;
+	RCC->CFGR = val;
 
 	// wait for system clock to switch
 	uint32_t tickstart = sysTickCnt;
@@ -298,6 +311,7 @@ bool CPU_Core::Clock_EnableMSI(void)
 	}
 	return true;
 }
+
 bool CPU_Core::Clock_DisableMSI(void)
 {
 	RCC->CR &= ~(RCC_CR_MSION);
@@ -328,6 +342,7 @@ bool CPU_Core::Clock_EnableHSI(void)
 	}
 	return true;
 }
+
 bool CPU_Core::Clock_EnableHSIdiv4(void)
 {
 	RCC->CR |= RCC_CR_HSION | RCC_CR_HSIDIVEN;
@@ -341,6 +356,7 @@ bool CPU_Core::Clock_EnableHSIdiv4(void)
 	}
 	return true;
 }
+
 bool CPU_Core::Clock_DisableHSI(void)
 {
 	RCC->CR &= ~(RCC_CR_HSION | RCC_CR_HSIDIVEN);
@@ -369,9 +385,10 @@ bool CPU_Core::Clock_EnablePLL(void)
 	}
 	return true;
 }
+
 bool CPU_Core::Clock_DisablePLL(void)
 {
-	RCC->CR &= RCC_CR_PLLON;
+	RCC->CR &= ~(RCC_CR_PLLON);
 
 	uint32_t tickstart = sysTickCnt;
 	while((RCC->CR & RCC_CR_PLLRDY) != 0){
@@ -497,7 +514,17 @@ void CPU_Core::ConfigureSleep(bool voltageRegulatorSleep)
 	SCB->SCR = ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SEVONPEND_Msk | SCB_SCR_SLEEPONEXIT_Msk);
 }
 
-void CPU_Core::ConfigureStop(bool voltageRegulatorSleep)
+void CPU_Core::WakeupFromStopWithHSI(bool useHSI)
+{
+	uint32_t val = RCC->CFGR;
+
+	if(useHSI) val |= RCC_CFGR_STOPWUCK;
+	else       val &= ~(RCC_CFGR_STOPWUCK);
+
+	RCC->CFGR = val;
+}
+
+void CPU_Core::EnterStop(void)
 {
 	/** see #ConfigureSleep for doc */
 
@@ -505,10 +532,6 @@ void CPU_Core::ConfigureStop(bool voltageRegulatorSleep)
 
 	// clear PDDS and LPSDSR
 	val &= ~(PWR_CR_PDDS | PWR_CR_LPSDSR);
-
-	// set LPSDSR if requested
-	if(voltageRegulatorSleep)
-		val |= PWR_CR_LPSDSR;
 
 	// set the mode
 	PWR->CR = val;
@@ -524,10 +547,39 @@ void CPU_Core::ConfigureStop(bool voltageRegulatorSleep)
 	val |= SCB_SCR_SLEEPDEEP_Msk;
 	SCB->SCR = val;
 
+	// Errata 2.5.1 workaround, disable I2C1
+	bool i2cON;
+	if((I2C1->CR1 & I2C_CR1_PE) == I2C_CR1_PE){
+		i2cON = true;
+		I2C1->CR1 &= ~(I2C_CR1_PE);
+	}
+	else i2cON = false;
+
+	/**
+	 * Errata 2.1.9 workaround.
+	 * The problem is only when executing WFI instruction from RAM.
+	 * Setting RUN_PD bit requires unlocking first (see 3.6.4 in RM0377)
+	 *
+	 * FLASH->ACR |= FLASH_ACR_RUN_PD;
+	 */
+
+	// clear the wake up flag
 	ClearWakeupFlag();
+
+	__WFI();
+
+	// restore previous frequency settings
+	SetFrequency(frequency);
+
+	// Errata 2.1.9 workaround
+	// FLASH->ACR &= ~(FLASH_ACR_RUN_PD);
+
+	// Errata 2.5.1 workaround
+	if(i2cON)
+		I2C1->CR1 |= I2C_CR1_PE;
 }
 
-void CPU_Core::ConfigureStandby(void)
+void CPU_Core::EnterStandby(void)
 {
 	/** see #ConfigureSleep for doc */
 
@@ -539,6 +591,8 @@ void CPU_Core::ConfigureStandby(void)
 	SCB->SCR = val;
 
 	ClearWakeupFlag();
+
+	__WFI();
 }
 
 void CPU_Core::ClearStanbyFlag(void)
@@ -562,6 +616,36 @@ void CPU_Core::ClearWakeupFlag(void)
 bool CPU_Core::IsVoltageRegulatorInLowPowerMode(void)
 {
 	return ((PWR->CSR & PWR_CSR_REGLPF) == PWR_CSR_REGLPF);
+}
+
+// -----------------------------------------------------------------------------
+
+bool CPU_Core::Clock_CleanUp(void)
+{
+	bool res = true;
+
+	uint32_t val = RCC->CFGR;
+	val &= ~(RCC_CFGR_SW);
+	switch(val){
+		case RCC_CFGR_SWS_MSI:
+			// disable PLL and HSI
+			res = res && Clock_DisablePLL();
+			res = res && Clock_DisableHSI();
+			break;
+		case RCC_CFGR_SWS_HSI:
+			// disable PLL and MSI
+			res = res && Clock_DisablePLL();
+			res = res && Clock_DisableMSI();
+			break;
+		case RCC_CFGR_SWS_PLL:
+			// disable MSI
+			res = res && Clock_DisableMSI();
+			break;
+		default:
+			res = false;
+			break;
+	}
+	return true;
 }
 
 // -----------------------------------------------------------------------------

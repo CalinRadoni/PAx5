@@ -76,7 +76,7 @@ void BoardTester::InteractiveTest(void)
 	sTextOutput.FormatAndOutputString("\tE. CRC32\r\n");
 	sTextOutput.FormatAndOutputString("\tF. Comm.Protocol packets\r\n");
 	sTextOutput.FormatAndOutputString("\tG. Copy: for loop vs DMA\r\n");
-	sTextOutput.FormatAndOutputString("\tH. Wakeup timer\r\n");
+	sTextOutput.FormatAndOutputString("\tH. Wakeup timer and low-power modes\r\n");
 	sTextOutput.FormatAndOutputString("\tz. Show HW Log\r\n");
 	sTextOutput.FormatAndOutputString("\tx. Clear HW Log\r\n");
 	sTextOutput.FormatAndOutputString("\r\n");
@@ -1049,17 +1049,82 @@ void BoardTester::TestPAWPackets(void)
 
 void BoardTester::TestWakeupTimer(void)
 {
+	uint32_t tickstart;
+	uint32_t wakeupTicks = 5;
+	bool res;
+
 	sTextOutput.InitBuffer();
 
-	sTextOutput.FormatAndOutputString("Initialize the wakeup timer for ~ 10 seconds and wait for it ...\r\n");
-	sTextOutput.Flush();
-	sRTC.SetWakeupTimer(10);
-	while(!sRTC.rtcWakeUpFired){
-		/* wait */
-	}
-	sTextOutput.FormatAndOutputString("... done.\r\n");
+	sTextOutput.FormatAndOutputString("The wake up timer will be initialized for %d seconds for every operation.\r\n", wakeupTicks);
 
+	sTextOutput.FormatAndOutputString("Wake up timer test ... ");
 	sTextOutput.Flush();
+	res = true;
+	if(sRTC.SetWakeupTimer(wakeupTicks)){
+		tickstart = sysTickCnt;
+		while(!sRTC.rtcWakeUpFired){
+			if((sysTickCnt - tickstart) > 10000){
+				res = false;
+				sRTC.rtcWakeUpFired = true;
+			}
+		}
+		if(res) sTextOutput.FormatAndOutputString("done.\r\n");
+		else sTextOutput.FormatAndOutputString("wake up timer problem !\r\n");
+	}
+	else{
+		res = false;
+		sTextOutput.FormatAndOutputString("failed to set the wake up timer!\r\n");
+	}
+	sTextOutput.Flush();
+
+	if(!res) return;
+
+	sTextOutput.FormatAndOutputString("__WFI(), voltage regulator in normal mode ... ");
+	sCPU.ConfigureSleep(false);
+	if(sRTC.SetWakeupTimer(7)){
+		__WFI();
+		sTextOutput.FormatAndOutputString("done.\r\n");
+	}
+	sTextOutput.Flush();
+	sTextOutput.FormatAndOutputString("__WFI(), voltage regulator in normal mode ... ");
+	sCPU.ConfigureSleep(true);
+	if(sRTC.SetWakeupTimer(7)){
+		__WFI();
+		sTextOutput.FormatAndOutputString("done.\r\n");
+	}
+	sTextOutput.Flush();
+
+	sCPU.SetFrequency(sCPU.Frequency::MSI_4M2);
+	sCPU.SetFrequency(sCPU.Frequency::HSI16_32M);
+
+	sTextOutput.FormatAndOutputString("Stop(), wake up with MSI ... ");
+	sTextOutput.Flush();
+	DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
+	sCPU.WakeupFromStopWithHSI(false);
+	if(sRTC.SetWakeupTimer(7)){
+		sCPU.EnterStop();
+		sTextOutput.FormatAndOutputString("done.\r\n");
+	}
+	DBGMCU->CR &= ~DBGMCU_CR_DBG_STOP;
+	sTextOutput.Flush();
+
+	sTextOutput.FormatAndOutputString("Stop(), wake up with HSI ... ");
+	sTextOutput.Flush();
+	DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
+	sCPU.WakeupFromStopWithHSI(true);
+	if(sRTC.SetWakeupTimer(7)){
+		sCPU.EnterStop();
+		sTextOutput.FormatAndOutputString("done.\r\n");
+	}
+	DBGMCU->CR &= ~DBGMCU_CR_DBG_STOP;
+	sTextOutput.Flush();
+
+	sTextOutput.FormatAndOutputString("Standby() ...\r\n");
+	sTextOutput.Flush();
+	if(sRTC.SetWakeupTimer(7)){
+		// will reset when WUT fires
+		sCPU.EnterStandby();
+	}
 }
 
 // -----------------------------------------------------------------------------

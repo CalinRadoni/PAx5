@@ -93,7 +93,7 @@ public:
 	/**
 	 * \brief Prepare the core for entering the Sleep mode
 	 *
-	 * \details In Sleep mode, all I/O pins keep the same state as in Run mode.
+	 * \detail In Sleep mode, all I/O pins keep the same state as in Run mode.
 	 * CPU clock is off but the mode has no effect on other clocks or analog clock sources.
 	 * If voltage regulator is in sleep mode the wake up time increases.
 	 *
@@ -107,20 +107,70 @@ public:
 	 */
 	void ConfigureSleep(bool voltageRegulatorSleep);
 
-	void ConfigureStop(bool voltageRegulatorSleep);
+	/**
+	 * Select if HSI is the clock for wake up from Stop mode or the default, MSI, value.
+	 */
+	void WakeupFromStopWithHSI(bool);
 
-	void ConfigureStandby(void);
+	/**
+	 * \brief Enters the Stop mode
+	 *
+	 * \detail In Stop mode, all I/O pins keep the same state as in Run mode.
+	 *
+	 * After resuming Stop mode the frequency is set to previous value.
+	 *
+	 * \warning The interrupt processed while the frequency is not the desired one
+	 *          may cause unpredictable behaviour ! PM0223 recommends to use PRIMASK.PM
+	 *          to permanently disable interrupts but a new clock setting procedure
+	 *          (without current procedure for wait states) must be created and this
+	 *          can cause more problems.
+	 *
+	 * There are some silicon problems with the Stop mode. See STM32L051x6/8 Errata sheet
+	 * and the function definition.
+	 *
+	 * Exiting the Stop mode resume program execution.
+	 *
+	 * \note 1. This function call #Clock_CleanUp function after exiting STOP mode.
+	 *
+	 * \note 2. As errata 2.1.10 workaround, the voltage regulator will NOT be put in low power mode.
+	 *       This also allows I2C and USART to be used as wake up sources (errata 2.1.11 workaround).
+	 *
+	 * \note 3. As errata 2.5.1 workaround, I2C1 is disabled before entering Stop mode.
+	 *       After exiting Stop mode I2C state will be restored.
+	 *
+	 * \warning Do not call this function from RAM, errata 2.1.9 not corrected ! The workaround
+	 *          requires more code that may be useful for this function.
+	 */
+	void EnterStop(void);
+
+	/**
+	 * \brief Enters the Standby mode
+	 *
+	 * \detail In Standby mode, all I/O pins are high impedance except the reset pin.
+	 * Exiting Standby mode is like a CPU reset.
+	 */
+	void EnterStandby(void);
 
 	void ClearStanbyFlag(void);
 	void ClearWakeupFlag(void);
 
-	/*
+	/**
 	 * \brief Check if the voltage regulator is still in low-power mode
 	 *
 	 * From RM0377, Power control/status register, bit REGLPF:
 	 * Polling is recommended to wait for the regulator Main mode.
 	 */
 	bool IsVoltageRegulatorInLowPowerMode(void);
+
+	/**
+	 * \brief Disable oscillators or PLL if not used by system clock
+	 *
+	 * \details The system clock can use MSI, HSI, HSE or PLL.
+	 *          The system does not use HSE.
+	 *          This function disable oscillators or PLL not used by
+	 *          current configuration readed from RCC_CFGR register.
+	 */
+	bool Clock_CleanUp(void);
 
 protected:
 	Frequency frequency;

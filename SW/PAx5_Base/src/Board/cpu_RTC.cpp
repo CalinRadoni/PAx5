@@ -106,9 +106,6 @@ bool CPU_RTC::InitializeRTC(void)
 	val |= RCC_CSR_RTCEN;      // RTC clock enable
 	RCC->CSR = val;
 
-	// disable PWR clock
-	// RCC->APB1ENR &=~ RCC_APB1ENR_PWREN;
-
 	// --- RTC -------------------------------------
 
 	if(!InitializePrescaler())
@@ -150,7 +147,7 @@ bool CPU_RTC::InitializeWakeupTimer(void)
 	RTC->CR = val;
 
 	// clear wake up flag
-	RTC->ISR = ~(RTC_ISR_WUTF);
+	RTC->ISR &= ~(RTC_ISR_WUTF);
 
 	// enable wake up counter and interrupt
 	RTC->CR |= RTC_CR_WUTE | RTC_CR_WUTIE;
@@ -166,7 +163,7 @@ bool CPU_RTC::InitializeWakeupTimer(void)
 	EXTI->RTSR |= EXTI_RTSR_TR20;
 
 	// clear EXTI line 20 flag
-	EXTI->PR = EXTI_PR_PR20;
+	EXTI->PR |= EXTI_PR_PR20;
 
 	rtcWakeUpFired = false;
 
@@ -261,8 +258,8 @@ bool CPU_RTC::DisableWakeupTimer(void)
 void CPU_RTC::HandleInterrupt(void)
 {
 	if((RTC->ISR & RTC_ISR_WUTF) == RTC_ISR_WUTF) {
-		RTC->ISR = ~(RTC_ISR_WUTF); // clear wake up flag
-		EXTI->PR = EXTI_PR_PR20;    // clear EXTI line 20 flag
+		RTC->ISR &= ~(RTC_ISR_WUTF); // clear wake up flag
+		EXTI->PR |= EXTI_PR_PR20;    // clear EXTI line 20 flag
 
 		rtcWakeUpFired = true;
 	}
@@ -300,9 +297,8 @@ bool CPU_RTC::InitializePrescaler(void)
 	// enable write access for RTC registers
 	RTC_WriteAccess_Enable();
 
-	// Enter RTC initialization mode
-	//RTC->ISR |= RTC_ISR_INIT;
-	// the following statement clears also clears all flags
+	// Enter RTC initialization mode (RTC->ISR |= RTC_ISR_INIT) but
+	// the following statement also clears all other flags
 	RTC->ISR = RTC_ISR_INIT;
 
 	uint32_t tickstart = sysTickCnt;
