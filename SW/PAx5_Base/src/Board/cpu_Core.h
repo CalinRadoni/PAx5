@@ -19,7 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef cpu_CORE_H_
 #define cpu_CORE_H_
 
-#include "MainBoard_Base.h"
+#include <MainBoard_Base.h>
+
+#include <cpu_Clocks.h>
 
 namespace PAx5 {
 
@@ -28,16 +30,24 @@ public:
 	CPU_Core();
 	virtual ~CPU_Core();
 
+	/**
+	 * When adding an entry in this table modify, if needed, the following functions:
+	 * - SetFrequency
+	 * - NVM_WaitStateRequired
+	 * - AllowedVoltageRange
+	 *
+	 */
 	enum class Frequency : uint8_t {
-		MSI_65k,   //  65.536 kHz, MSI, VR3, NVM 0 wait-state
-		MSI_131k,  // 131.072 kHz, MSI, VR3, NVM 0 wait-state
-		MSI_262k,  // 262.144 kHz, MSI, VR3, NVM 0 wait-state
-		MSI_524k,  // 524.288 kHz, MSI, VR3, NVM 0 wait-state
-		MSI_1M,    // 1.048 MHz, MSI, VR3, NVM 0 wait-state
-		MSI_2M1,   // 2.097 MHz, MSI, VR3, NVM 0 wait-state
-		MSI_4M2,   // 4.194 MHz, MSI, VR3, NVM 0 wait-state
-		HSI16_16M, // 16 MHz, HSI + PLL, VR2, NVM 1 wait-state
-		HSI16_32M,  // 32 MHz, HSI + PLL, VR1, NVM 1 wait-state
+		MSI_65k,       //  65.536 kHz, MSI,       VR3, NVM 0 wait-state
+		MSI_131k,      // 131.072 kHz, MSI,       VR3, NVM 0 wait-state
+		MSI_262k,      // 262.144 kHz, MSI,       VR3, NVM 0 wait-state
+		MSI_524k,      // 524.288 kHz, MSI,       VR3, NVM 0 wait-state
+		MSI_1M,        // 1.048 MHz,   MSI,       VR3, NVM 0 wait-state
+		MSI_2M1,       // 2.097 MHz,   MSI,       VR3, NVM 0 wait-state
+		MSI_4M2,       // 4.194 MHz,   MSI,       VR3, NVM 0 wait-state
+		HSI16_16M,     // 16 MHz,      HSI,       VR2, NVM 1 wait-state
+		HSI16_16M_PLL, // 16 MHz,      HSI + PLL, VR2, NVM 1 wait-state
+		HSI16_32M_PLL, // 32 MHz,      HSI + PLL, VR1, NVM 1 wait-state
 		Unknown
 	};
 
@@ -48,14 +58,26 @@ public:
 	};
 
 	/**
+	 *  Usage:
+	 * \code{.cpp}
+	 * cpuClocks.clockSYS = SystemCoreClock;
+	 * cpuClocks.Startup_SetValues();
+	 * ...
+	 * cpuClocks.clockSYS = SystemCoreClock;
+	 * cpuClocks.UpdateClockValues();
+	 * \endcode
+	 */
+	CPU_Clocks cpuClocks;
+
+	/**
 	 * \brief Created to be called after startup, configures system clock to 32 MHz using HSI
 	 *
 	 * \details This function:
 	 * - enable power interface clock
 	 * - set voltage regulator's range to VR1
 	 * - enable 1 wait-state latency for NVM
-	 * - enable HSI and HSI divided by 4
-	 * - enable PLL for HSI, multiply with 16 and divide with 2
+	 * - enable HSI
+	 * - enable PLL for HSI, multiply with 4 and divide with 2
 	 * - select PLL as system clock.
 	 *
 	 * \note Even if the function fails, #voltageRange and #frequency have the correct values.
@@ -76,7 +98,13 @@ public:
 	 * - the required wait states for NVM
 	 * - the system timer
 	 *
+	 * Even if this function returns false, it still call the #SystemCoreClockUpdate and #SysTick_Config
+	 * functions to set the #SystemCoreClock variable and the System Timer based on current, real, values.
+	 * When the return value is false the frequency is set to Frequency::Unknown.
+	 *
 	 * \note Changing the frequency to MSI_xxx will disable HSI and PLL.
+	 *
+	 * \note This function does NOT call the #Clock_CleanUp function. Call that function if you want.
 	 *
 	 * \warning Changing the system clock's frequency affects at least:
 	 * - UART, I2C and SPI modules
@@ -130,7 +158,7 @@ public:
 	 *
 	 * Exiting the Stop mode resume program execution.
 	 *
-	 * \note 1. This function call #Clock_CleanUp function after exiting STOP mode.
+	 * \note 1. This function calls #Clock_CleanUp function after exiting STOP mode.
 	 *
 	 * \note 2. As errata 2.1.10 workaround, the voltage regulator will NOT be put in low power mode.
 	 *       This also allows I2C and USART to be used as wake up sources (errata 2.1.11 workaround).
@@ -214,7 +242,8 @@ protected:
 
 	bool SetFrequency_MSI(uint32_t);
 	bool SetFrequency_HSI16_16M(void);
-	bool SetFrequency_HSI16_32M(void);
+	bool SetFrequency_HSI16_16M_PLL(void);
+	bool SetFrequency_HSI16_32M_PLL(void);
 };
 
 extern CPU_Core sCPU;

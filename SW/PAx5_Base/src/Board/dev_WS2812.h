@@ -50,7 +50,21 @@ public:
 	void AddData(uint8_t, uint8_t, uint8_t);
 	void AddData(uint32_t);
 
-	// !!! Call board.CheckRadioInterrupt() after this function !!!
+	/**
+	 * \brief Sends the data added with #AddData functions
+	 *
+	 * \details This function:
+	 * - save the value of SPI clock
+	 * - set the SPI clock to 4 MHz
+	 * - send data
+	 * - set the SPI clock to saved value
+	 *
+	 * According to the WS2812B datasheet, the bit length is 1250 ns +/- 300 ns,
+	 * which equals to 950 ns - 1550 ns bit length.
+	 * The ideal value for the SPI clock is 3.2 MHz but 4 MHz is good enough and within the datasheet range.
+	 *
+	 * \warning Call board.CheckRadioInterrupt() after this function !
+	 */
 	void SendSPIBuffer(void);
 
 protected:

@@ -52,15 +52,15 @@ void CPU_EntropyADC::Enable(void)
 		while((ADC1->CR & ADC_CR_ADEN) != 0) { __NOP(); } // wait
 	}
 
+	 // (12.5 + 19.5) ADC clock cycles at 16 MHz -> 2 us
+
 	ADC1->CFGR1  = ADC_CFGR1_CONT;     // continuous mode
 
-	ADC1->CFGR2  = 0;                  // ADCCLK (Asynchronous clock mode), Oversampler disabled
-	ADC1->SMPR   = 0;                  // 1.5 ADC clock cycles (at 4 MHz this is 0,375 uS - need NOT a good result !!! - 2,2 uS recommended)
-	//ADC1->CFGR2 = ADC_CFGR2_CKMODE_1; // 8 MHZ
-	//ADC1->SMPR = ADC_SMPR_SMP_0;      // 3.5 ADC Clock cycles
+	ADC1->CFGR2  = 0;                  // ADC clock mode = HSI16
+	ADC1->SMPR   = ADC_SMPR_SMPR_2;    // sampling time = 19.5 ADC clock cycles
 
 	ADC1->CHSELR = ADC_CHSELR_CHSEL18; // select channel 18
-	ADC->CCR     = ADC_CCR_TSEN;       // temperature sensor enable
+	ADC->CCR     = ADC_CCR_TSEN;       // temperature sensor enable, no clock prescaler
 
 	// clear flags ...
 	ADC1->ISR = ADC_ISR_EOCAL | ADC_ISR_AWD | ADC_ISR_OVR | ADC_ISR_EOSEQ | ADC_ISR_EOC | ADC_ISR_EOSMP | ADC_ISR_ADRDY;

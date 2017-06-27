@@ -26,6 +26,7 @@ FILEID(7)
 #define LOG_CODE_CfgTimeout  1 // data unused
 #define LOG_CODE_UB_Overflow 2 // data unused
 #define LOG_CODE_IntHandler  3 // data = (uint16_t)USART1->ISR
+#define LOG_CODE_BaudRate    4 // 0: requested 0, 1: too small, 2: too big, 3: error too big >= 3%
 
 // -----------------------------------------------------------------------------
 
@@ -57,17 +58,79 @@ void CPU_USART1::Initialize(void)
 	dataSent = false;
 
 	intfError = false;
+
+	USARTDivider = 0;
+}
+
+bool CPU_USART1::ComputeUSARTDivider(uint32_t fck, uint32_t baudRate)
+{
+	if(baudRate == 0){
+		hwLogger.AddEntry(FileID, LOG_CODE_BaudRate, 0);
+		USARTDivider = 0;
+		return false;
+	}
+
+	USARTDivider = fck;
+	USARTDivider *= 100U;
+	USARTDivider /= baudRate;
+	USARTDivider += 50U;
+	USARTDivider /= 100U;
+
+	/**
+	 * RM0377, 24.5.4 USART baud rate generation: USARTDIV must be greater than or equal to 0d16 !
+	 */
+	if(USARTDivider < 0x10){
+		hwLogger.AddEntry(FileID, LOG_CODE_BaudRate, 1);
+		USARTDivider = 0;
+		return false;
+	}
+
+	/**
+	 * BRR is 16 bits in length
+	 */
+	if(USARTDivider > 0x00FFFFU){
+		hwLogger.AddEntry(FileID, LOG_CODE_BaudRate, 2);
+		USARTDivider = 0;
+		return false;
+	}
+
+	/**
+	 * Compute the value of baud rate for computed USARTDivider
+	 */
+	uint32_t error = fck;
+	error *= 100U;
+	error /= USARTDivider;
+	error += 50U;
+	error /= 100U;
+
+
+	/**
+	 * RM 0377, 24.5.5 Tolerance of the USART receiver to clock deviation: Error should be under 3%.
+	 */
+	if(error > baudRate) error -= baudRate;
+	else                 error = baudRate - error;
+	error *= 10000U;
+	error /= baudRate;
+	if(error >= 300){
+		hwLogger.AddEntry(FileID, LOG_CODE_BaudRate, 3);
+		USARTDivider = 0;
+		return false;
+	}
+
+	return true;
 }
 
 bool CPU_USART1::Configure(void)
 {
+	if(USARTDivider == 0) return false;
+
 	// Enable the peripheral clock for USART1
 	// USART1 clock is PCLK2 (APB2 peripheral clocks)
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 
-	// Baud rate 115200
-	USART1->BRR = 0x116;
-	// 8N1, Oversampling by 16, Enable Tx, Rx and UART
+	// Set the baud rate
+	USART1->BRR = USARTDivider;
+	// 8N1, Oversampling by 16, Enable Tx, Rx and USART
 	USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
 
 	// Wait for idle frame Transmission ...

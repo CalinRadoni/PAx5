@@ -51,7 +51,7 @@ void CPU_SPI1::Initialize(void)
 	spiSlave     = SPISlave_None;
 	readyToSend  = false;
 
-	clockDivider = 4;
+	clockDivider = 2;
 }
 
 void CPU_SPI1::Configure(void)

@@ -35,8 +35,27 @@ public:
 	volatile bool transferDone;
 	volatile bool intfError;
 
+
+	/**
+	 * Initialize this object, not the SPI module
+	 */
 	void Initialize(void);
+
+	/**
+	 * \brief Clock divider for SPI clock
+	 *
+	 * \details Input clock is PCLK2.
+	 * SPI clock = Input clock / clock divider ratio.
+	 * Is used by #Configure and #ConfigureForRAM functions
+	 *
+	 * Only the lower 3 bits are used.
+	 * clock divider ratio = 2 ^ (#clockDivider + 1)
+	 */
 	volatile uint8_t clockDivider;
+
+	/**
+	 * Configure the SPI module
+	 */
 	void Configure(void);
 
 	void SendCommandAndWait(uint8_t, uint8_t); // command, slave ID

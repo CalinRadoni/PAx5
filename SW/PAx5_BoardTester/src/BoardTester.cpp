@@ -18,34 +18,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <dev_HIHSensor.h>
 #include <dev_WS2812.h>
-#include "BoardTester.h"
+#include <BoardTester.h>
 
-#include "dev_LED.h"
+#include <dev_LED.h>
 
-#include "cpu_USART1.h"
-#include "cpu_Info.h"
-#include "cpu_SPI1.h"
-#include "dev_ExternalFlash.h"
-#include "dev_RFM69.h"
-#include "cpu_Entropy.h"
-#include "cpu_EntropyADC.h"
-#include "cpu_ADC.h"
-#include "cpu_I2C.h"
-#include "cpu_Text.h"
-#include "cpu_MemoryFlash.h"
-#include "cpu_MemoryEEPROM.h"
-#include "cpu_CRC.h"
-#include "cpu_DMA.h"
-#include "cpu_GPIO.h"
-#include "dev_TSL2561.h"
-#include "cpu_Core.h"
-#include "cpu_RTC.h"
+#include <cpu_USART1.h>
+#include <cpu_Info.h>
+#include <cpu_SPI1.h>
+#include <dev_ExternalFlash.h>
+#include <dev_RFM69.h>
+#include <cpu_Entropy.h>
+#include <cpu_EntropyADC.h>
+#include <cpu_ADC.h>
+#include <cpu_I2C.h>
+#include <cpu_Text.h>
+#include <cpu_MemoryFlash.h>
+#include <cpu_MemoryEEPROM.h>
+#include <cpu_CRC.h>
+#include <cpu_DMA.h>
+#include <cpu_GPIO.h>
+#include <dev_TSL2561.h>
+#include <cpu_Core.h>
+#include <cpu_RTC.h>
 
-#include "Enc_ChaCha20.h"
+#include <Enc_ChaCha20.h>
 
-#include "CommProtocol.h"
+#include <CommProtocol.h>
 
 namespace PAx5 {
+// -----------------------------------------------------------------------------
+
+#define TEST_SUITE_DEV
+//#define TEST_SUITE_A1
+
 // -----------------------------------------------------------------------------
 
 BoardTester::BoardTester() { }
@@ -66,19 +71,26 @@ void BoardTester::InteractiveTest(void)
 	sTextOutput.FormatAndOutputString("\t3. ADC\r\n");
 	sTextOutput.FormatAndOutputString("\t4. I2C\r\n");
 	sTextOutput.FormatAndOutputString("\t5. I2C - HIH Sensor\r\n");
-	sTextOutput.FormatAndOutputString("\t6. I2C - TSL2561\r\n");
-	sTextOutput.FormatAndOutputString("\t7. I2C Slave\r\n");
-	sTextOutput.FormatAndOutputString("\t8. WS2812 connected to PB5\r\n");
-	sTextOutput.FormatAndOutputString("\tA. Encryption\r\n");
-	sTextOutput.FormatAndOutputString("\tB. FLASH Programming !\r\n");
-	sTextOutput.FormatAndOutputString("\tC. EEPROM Programming\r\n");
-	sTextOutput.FormatAndOutputString("\tD. External FLASH Programming\r\n");
-	sTextOutput.FormatAndOutputString("\tE. CRC32\r\n");
-	sTextOutput.FormatAndOutputString("\tF. Comm.Protocol packets\r\n");
-	sTextOutput.FormatAndOutputString("\tG. Copy: for loop vs DMA\r\n");
-	sTextOutput.FormatAndOutputString("\tH. Wakeup timer and low-power modes\r\n");
-	sTextOutput.FormatAndOutputString("\tz. Show HW Log\r\n");
-	sTextOutput.FormatAndOutputString("\tx. Clear HW Log\r\n");
+	sTextOutput.FormatAndOutputString("\tQ. EEPROM Programming\r\n");
+	sTextOutput.FormatAndOutputString("\tW. External FLASH Programming\r\n");
+	sTextOutput.FormatAndOutputString("\tE. Wakeup timer and low-power modes\r\n");
+
+#ifdef TEST_SUITE_DEV
+	sTextOutput.FormatAndOutputString("\tA. I2C - TSL2561\r\n");
+	sTextOutput.FormatAndOutputString("\tS. WS2812 connected to PB5\r\n");
+#endif
+
+#ifdef TEST_SUITE_A1
+	sTextOutput.FormatAndOutputString("\tZ. I2C Slave\r\n");
+	sTextOutput.FormatAndOutputString("\tX. Encryption\r\n");
+	sTextOutput.FormatAndOutputString("\tC. FLASH Programming !\r\n");
+	sTextOutput.FormatAndOutputString("\tV. CRC32\r\n");
+	sTextOutput.FormatAndOutputString("\tB. Comm.Protocol packets\r\n");
+	sTextOutput.FormatAndOutputString("\tN. Copy: for loop vs DMA\r\n");
+#endif
+
+	sTextOutput.FormatAndOutputString("\t[. Show HW Log\r\n");
+	sTextOutput.FormatAndOutputString("\t]. Clear HW Log\r\n");
 	sTextOutput.FormatAndOutputString("\r\n");
 
 	sTextOutput.Flush();
@@ -97,26 +109,26 @@ void BoardTester::InteractiveTest(void)
 		case '3': TestADC(); break;
 		case '4': TestI2C(); break;
 		case '5': TestI2C_HIH(); break;
-		case '6': TestI2C_TSL2561(); break;
-		case '7': TestI2CSlave(); break;
-		case '8': TestWS2812(); break;
+		case 'Q': TestEEPROMProg(); break;
+		case 'W': TestExtFlash(); break;
+		case 'E': TestWakeupTimer(); break;
 
-		case 'A': TestEcryption(); break;
+#ifdef TEST_SUITE_DEV
+		case 'A': TestI2C_TSL2561(); break;
+		case 'S': TestWS2812(); break;
+#endif
 
-		case 'B': TestFLASHProg(); break;
-		case 'C': TestEEPROMProg(); break;
-		case 'D': TestExtFlash(); break;
+#ifdef TEST_SUITE_A1
+		case 'Z': TestI2CSlave(); break;
+		case 'X': TestEcryption(); break;
+		case 'C': TestFLASHProg(); break;
+		case 'V': TestCRC(); break;
+		case 'B': TestPAWPackets(); break;
+		case 'N': TestCopy(); break;
+#endif
 
-		case 'E': TestCRC(); break;
-
-		case 'F': TestPAWPackets(); break;
-
-		case 'G': TestCopy(); break;
-
-		case 'H': TestWakeupTimer(); break;
-
-		case 'z': ShowHWLog(); break;
-		case 'x': ClearHWLog(); break;
+		case '[': ShowHWLog(); break;
+		case ']': ClearHWLog(); break;
 	}
 
 	sTextOutput.FormatAndOutputString("\r\n\r\n");
@@ -181,13 +193,13 @@ void BoardTester::TestBoard(void)
 	dc = sCPUInfo.Get_CPUID_Implementer();
 	sTextOutput.FormatAndOutputString("CPUID:\r\n");
 	if(dc == 0x41) sTextOutput.FormatAndOutputString("  - Implementer ARM\r\n");
-	else sTextOutput.FormatAndOutputString("  - Implementer unknown %x\r\n", dc);
+	else           sTextOutput.FormatAndOutputString("  - Implementer unknown %x\r\n", dc);
 	dc = sCPUInfo.Get_CPUID_Architecture();
 	if(dc == 0x0C) sTextOutput.FormatAndOutputString("  - Architecture ARMv6-M\r\n");
-	else sTextOutput.FormatAndOutputString("  - Unknown architecture %x\r\n", dc);
+	else           sTextOutput.FormatAndOutputString("  - Unknown architecture %x\r\n", dc);
 	dc = sCPUInfo.Get_CPUID_PartNo();
 	if(dc == 0x0C60) sTextOutput.FormatAndOutputString("  - STM32L0 Cortex-M0+\r\n");
-	else sTextOutput.FormatAndOutputString("  - Unknown part number %x\r\n", dc);
+	else             sTextOutput.FormatAndOutputString("  - Unknown part number %x\r\n", dc);
 	dc = sCPUInfo.Get_CPUID_Variant(); 	sTextOutput.FormatAndOutputString("  - Revision %d, ", dc);
 	dc = sCPUInfo.Get_CPUID_Revision(); sTextOutput.FormatAndOutputString("patch %d\r\n", dc);
 
@@ -323,7 +335,15 @@ void BoardTester::TestADC(void)
 	gpioPA2.AttachToPin(PA2); gpioPA2.SetMode(gpioDefinition);
 	gpioPA3.AttachToPin(PA3); gpioPA3.SetMode(gpioDefinition);
 
-	sADC.Enable();
+	/**
+	 * prescaler = 4 (clockPrescaler = 2)
+	 * for HSI16 = 16 MHz -> ADC clock frequency = 4MHz -> ADC clock cycle = 250 ns
+	 *
+	 * tSAR = 12.5 (12 bits)
+	 * tSMPL = 12.5 ADC (samplingTime = 3)
+	 * Conversion time = (12.5 + 12.5) * 250 ns = 6.25 us
+	 */
+	sADC.Enable(2, sCPU.cpuClocks.clockSPI, 3);
 
 	uint8_t round = 0;
 	sTextOutput.InitBuffer();
@@ -1086,7 +1106,7 @@ void BoardTester::TestWakeupTimer(void)
 		sTextOutput.FormatAndOutputString("done.\r\n");
 	}
 	sTextOutput.Flush();
-	sTextOutput.FormatAndOutputString("__WFI(), voltage regulator in normal mode ... ");
+	sTextOutput.FormatAndOutputString("__WFI(), voltage regulator in low-power mode ... ");
 	sCPU.ConfigureSleep(true);
 	if(sRTC.SetWakeupTimer(7)){
 		__WFI();
@@ -1094,29 +1114,26 @@ void BoardTester::TestWakeupTimer(void)
 	}
 	sTextOutput.Flush();
 
-	sCPU.SetFrequency(sCPU.Frequency::MSI_4M2);
-	sCPU.SetFrequency(sCPU.Frequency::HSI16_32M);
-
 	sTextOutput.FormatAndOutputString("Stop(), wake up with MSI ... ");
 	sTextOutput.Flush();
-	DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
+	//DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
 	sCPU.WakeupFromStopWithHSI(false);
 	if(sRTC.SetWakeupTimer(7)){
 		sCPU.EnterStop();
 		sTextOutput.FormatAndOutputString("done.\r\n");
 	}
-	DBGMCU->CR &= ~DBGMCU_CR_DBG_STOP;
+	//DBGMCU->CR &= ~DBGMCU_CR_DBG_STOP;
 	sTextOutput.Flush();
 
 	sTextOutput.FormatAndOutputString("Stop(), wake up with HSI ... ");
 	sTextOutput.Flush();
-	DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
+	//DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
 	sCPU.WakeupFromStopWithHSI(true);
 	if(sRTC.SetWakeupTimer(7)){
 		sCPU.EnterStop();
 		sTextOutput.FormatAndOutputString("done.\r\n");
 	}
-	DBGMCU->CR &= ~DBGMCU_CR_DBG_STOP;
+	//DBGMCU->CR &= ~DBGMCU_CR_DBG_STOP;
 	sTextOutput.Flush();
 
 	sTextOutput.FormatAndOutputString("Standby() ...\r\n");

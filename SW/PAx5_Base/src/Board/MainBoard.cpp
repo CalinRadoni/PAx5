@@ -164,12 +164,21 @@ MainBoard::Error MainBoard::InitializeBoard(BoardDefinion& boardDef)
 	SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock / 1000U);
 
+	sCPU.cpuClocks.clockSYS = SystemCoreClock;
+	sCPU.cpuClocks.Startup_SetValues();
+	sCPU.cpuClocks.UpdateClockValues();
+
 	if(brdErr == Error::OK){
 		ConfigureGPIO();
 
 		if(boardCapabilities.Use_USART) {
-			if(!sUSART.Configure())
+			if(!sUSART.ComputeUSARTDivider(sCPU.cpuClocks.clockUSART1, 115200)){
 				brdErr = Error::USART;
+			}
+			else{
+				if(!sUSART.Configure())
+					brdErr = Error::USART;
+			}
 		}
 	}
 

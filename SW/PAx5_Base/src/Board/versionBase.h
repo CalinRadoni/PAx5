@@ -25,8 +25,8 @@ namespace PAx5 {
 // the preprocessor knows nothing about namespaces !
 
 #define Base_SW_VER_MAJOR	0
-#define Base_SW_VER_MINOR	27
-#define Base_SW_VER_BUILD	652
+#define Base_SW_VER_MINOR	87
+#define Base_SW_VER_BUILD	668
 
 }
 

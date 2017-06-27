@@ -38,14 +38,37 @@ public:
 
 	volatile bool    intfError;
 
-	/** Initialize this object's state */
+	/**
+	 * \brief Initialize this object's state
+	 *
+	 * \details This function is called by object's constructor
+	 */
 	void Initialize(void);
 
-	/** Configure the USART
+	/**
+	 * \brief Compute #USARTDivider for requested baud rate and clock
 	 *
-	 * This function configure USART1 to 115200 bauds, 8N1, interrupt enabled
+	 * \details When oversampling by 16 #USARTDivider = #fck / #baudRate
+
+	 * This function computes #USARTDivider, required for the #Configure function,
+	 * and checks:
+	 * - 0x10 <= #USARTDivider (required by RM0377 specification)
+	 * - #USARTDivider <= 0xFFFF (required by RM0377 specification)
+	 * - baud rate error < 3% (required by RM0377 specification)
 	 *
-	 * Return false if no idle frame is detected within defined timeout.
+	 * If the checks are not respected #USARTDivider will be set to 0 and the function
+	 * will return false.
+	 */
+	bool ComputeUSARTDivider(uint32_t fck, uint32_t baudRate);
+
+	/**
+	 * \brief Configure the USART
+	 *
+	 * \details This function configure USART1 to user specified baud rate, 8N1, interrupt enabled
+	 *
+	 * \note Call #ComputeUSARTDivider function to compute #USARTDivider, required for configuration
+	 *
+	 * \return false if no idle frame is detected within defined timeout.
 	 */
 	bool Configure(void);
 
@@ -65,6 +88,8 @@ protected:
 	volatile uint8_t buffTxLen;
 	volatile uint8_t buffTxIdx;
 	volatile bool dataSent;
+
+	uint32_t USARTDivider;
 };
 
 extern CPU_USART1 sUSART;

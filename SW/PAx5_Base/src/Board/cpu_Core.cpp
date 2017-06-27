@@ -88,8 +88,11 @@ bool CPU_Core::SetFrequency(Frequency freqIn)
 		case Frequency::HSI16_16M:
 			res = SetFrequency_HSI16_16M();
 			break;
-		case Frequency::HSI16_32M:
-			res = SetFrequency_HSI16_32M();
+		case Frequency::HSI16_16M_PLL:
+			res = SetFrequency_HSI16_16M_PLL();
+			break;
+		case Frequency::HSI16_32M_PLL:
+			res = SetFrequency_HSI16_32M_PLL();
 			break;
 		default:
 			res = false;
@@ -124,19 +127,19 @@ uint8_t CPU_Core::Startup_SetClock(void)
 	// Select flash to be 1 wait-state (required for 32MHZ on voltage scale 1)
 	FLASH->ACR |= FLASH_ACR_LATENCY;
 
-	// Enable HSI and HSI divided by 4 ...
-	RCC->CR |= RCC_CR_HSION | RCC_CR_HSIDIVEN;
+	// Enable HSI, NOT divided by 4 ...
+	RCC->CR = (RCC->CR & ~(RCC_CR_HSIDIVEN)) | RCC_CR_HSION;
 	// ... and wait for HSI to be ready
 	uint32_t tickstart = sysTickCnt;
-	while((RCC->CR & (RCC_CR_HSIRDY | RCC_CR_HSIDIVF)) != (RCC_CR_HSIRDY | RCC_CR_HSIDIVF)){
+	while((RCC->CR & (RCC_CR_HSIRDY | RCC_CR_HSIDIVF)) != RCC_CR_HSIRDY){
 		if((sysTickCnt - tickstart) > timeoutWait){
 			hwLogger.AddEntry(FileID, LogCodeClock, 5);
 			return 1;
 		}
 	}
 
-	// Enable PLL for HSI, multiply by 16 and divided by 2, then start PLL ...
-	RCC->CFGR |= RCC_CFGR_PLLSRC_HSI | RCC_CFGR_PLLMUL16 | RCC_CFGR_PLLDIV2;
+	// Enable PLL for HSI, multiply by 4 and divide by 2, then start PLL ...
+	RCC->CFGR |= RCC_CFGR_PLLSRC_HSI | RCC_CFGR_PLLMUL4 | RCC_CFGR_PLLDIV2;
 	RCC->CR |= RCC_CR_PLLON;
 	// ... and wait for PLL to be ready
 	tickstart = sysTickCnt;
@@ -158,9 +161,9 @@ uint8_t CPU_Core::Startup_SetClock(void)
 		}
 	}
 
-	frequency = Frequency::HSI16_32M;
+	frequency = Frequency::HSI16_32M_PLL;
 
-	// disable MSI and do NOT wait for it
+	// disable MSI, do NOT wait for it
 	RCC->CR &= ~(RCC_CR_MSION);
 
 	return 0;
@@ -174,9 +177,10 @@ bool CPU_Core::NVM_WaitStateRequired(void)
 	// Table 15. Delays to memory access and number of wait states
 
 	switch(frequency){
-		case Frequency::HSI16_32M:
+		case Frequency::HSI16_32M_PLL:
 			return true;
 
+		case Frequency::HSI16_16M_PLL:
 		case Frequency::HSI16_16M:
 			if(voltageRange==VoltageRange::VR1) return false;
 			return true;
@@ -202,9 +206,10 @@ bool CPU_Core::AllowedVoltageRange(VoltageRange vr)
 	// Table 14. Link between master clock power range and frequencies
 
 	switch(frequency){
-		case Frequency::HSI16_32M:
+		case Frequency::HSI16_32M_PLL:
 			return (vr == VoltageRange::VR1);
 
+		case Frequency::HSI16_16M_PLL:
 		case Frequency::HSI16_16M:
 			return (vr != VoltageRange::VR3);
 
@@ -414,10 +419,15 @@ bool CPU_Core::SetFrequency_MSI(uint32_t msiRange)
 	if(!Clock_SwitchToMSI()) return false;
 
 	EnableNVMWaitState(false);
-	SetVoltageRange(VoltageRange::VR3);
 
 	if(!Clock_DisablePLL()) return false;
 	if(!Clock_DisableHSI()) return false;
+
+	/**
+	 * \warning Do not reduce the voltage range before disabling PLL and HSI !
+	 *          Their frequency may be too high for VoltageRange::VR3 !
+	 */
+	SetVoltageRange(VoltageRange::VR3);
 
 	return true;
 }
@@ -427,15 +437,51 @@ bool CPU_Core::SetFrequency_HSI16_16M(void)
 	// Enable power interface clock
 	RCC->APB1ENR |= (RCC_APB1ENR_PWREN);
 
-	if(!Clock_EnableHSIdiv4()) return false;
-	if(!Clock_SwitchToHSI())   return false;
-	if(!Clock_DisablePLL())    return false;
+	EnableNVMWaitState(true);
+
+	/**
+	 * \warning Do not change #voltageRange to VR2 if it is VR1 !
+	 *          The current frequency may be higher that maximum allowed value for VR2 !
+	 */
+	if(voltageRange == VoltageRange::VR3)
+		SetVoltageRange(VoltageRange::VR2);
+
+	if(!Clock_EnableHSI())   return false;
+	if(!Clock_SwitchToHSI()) return false;
+	if(!Clock_DisablePLL())  return false;
+
+	if(voltageRange != VoltageRange::VR2)
+		SetVoltageRange(VoltageRange::VR2);
+
+	return true;
+}
+
+bool CPU_Core::SetFrequency_HSI16_16M_PLL(void)
+{
+	// Enable power interface clock
+	RCC->APB1ENR |= (RCC_APB1ENR_PWREN);
 
 	EnableNVMWaitState(true);
-	SetVoltageRange(VoltageRange::VR2);
 
-	// Configure PLL with HSI, multiply by 8 and divided by 2
-	// VR2 restricts the PLLVCO to max 48 MHz
+	/**
+	 * \warning Do not change #voltageRange to VR2 if it is VR1 !
+	 *          The current frequency may be higher that maximum allowed value for VR2 !
+	 */
+	if(voltageRange == VoltageRange::VR3)
+		SetVoltageRange(VoltageRange::VR2);
+
+	if(!Clock_EnableHSI())   return false;
+	if(!Clock_SwitchToHSI()) return false;
+	if(!Clock_DisablePLL())  return false;
+
+	if(voltageRange != VoltageRange::VR2)
+		SetVoltageRange(VoltageRange::VR2);
+
+	/**
+	 * Configure PLL with HSI, multiply by 2 and divide by 2
+	 *
+	 * \warning VR2 restricts the PLLVCO to max 48 MHz !
+	 */
 	uint32_t val = RCC->CFGR;
 	val &= ~(RCC_CFGR_PLLSRC);
 	val |= RCC_CFGR_PLLSRC_HSI | RCC_CFGR_PLLMUL8 | RCC_CFGR_PLLDIV2;
@@ -447,22 +493,22 @@ bool CPU_Core::SetFrequency_HSI16_16M(void)
 	return true;
 }
 
-bool CPU_Core::SetFrequency_HSI16_32M(void)
+bool CPU_Core::SetFrequency_HSI16_32M_PLL(void)
 {
 	// Enable power interface clock
 	RCC->APB1ENR |= (RCC_APB1ENR_PWREN);
 
-	if(!Clock_EnableHSIdiv4()) return false;
-	if(!Clock_SwitchToHSI())   return false;
-	if(!Clock_DisablePLL())    return false;
-
 	EnableNVMWaitState(true);
 	SetVoltageRange(VoltageRange::VR1);
 
-	// Configure PLL with HSI, multiply by 16 and divided by 2
+	if(!Clock_EnableHSI())   return false;
+	if(!Clock_SwitchToHSI()) return false;
+	if(!Clock_DisablePLL())  return false;
+
+	// Configure PLL with HSI, multiply by 4 and divide by 2
 	uint32_t val = RCC->CFGR;
 	val &= ~(RCC_CFGR_PLLSRC);
-	val |= RCC_CFGR_PLLSRC_HSI | RCC_CFGR_PLLMUL16 | RCC_CFGR_PLLDIV2;
+	val |= RCC_CFGR_PLLSRC_HSI | RCC_CFGR_PLLMUL4 | RCC_CFGR_PLLDIV2;
 	RCC->CFGR = val;
 
 	if(!Clock_EnablePLL())   return false;
@@ -649,4 +695,5 @@ bool CPU_Core::Clock_CleanUp(void)
 }
 
 // -----------------------------------------------------------------------------
-}
+
+} /* namespace */

@@ -32,6 +32,21 @@ public:
 
 	volatile uint8_t buffer[EntropyBufferLenADC];
 
+	/**
+	 * ADC will be enabled with HSI16 as input clock and 2 us sampling time:
+	 * - ADC clock HSI16 (16 MHz if not divided)
+	 * - sampling time set to 19.5 ADC clock cycles
+	 * - no clock prescaler
+	 * - 12 bits
+	 * - continuous mode
+	 * - channel 18 only
+	 *
+	 * \note This works by enabling ADC1_COMP_IRQn interrupt.
+	 *
+	 * \warning This function will modify the settings of the ADC1 module.
+	 *          This means that CPU_ADC will not work as you may expect unless
+	 *          you call its Enable function after you finish with this !
+	 */
 	void Enable(void);
 	void CollectStart(void);
 	void CollectStop(void);
