@@ -29,6 +29,9 @@ Rendering and pinouts are in `Docs/PAx5_Base` and in `Docs/PAx5_EnvSensor`.
 Environment sensor rendering:
 ![env-sensor](https://github.com/CalinRadoni/PAx5/blob/master/Docs/PAx5_EnvSensor/PAx5_EnvSensorFB.png)
 
+and a photo of the sensor and base board:
+![env-sensor](https://github.com/CalinRadoni/PAx5/blob/master/Docs/PAx5EnvSensorAndBaseBoard.png)
+
 ### Development Environment
 
 Main tools used are:
