@@ -56,7 +56,7 @@ public:
 	 *
 	 * \brief This function is called by #InitializeRTC function.
 	 * This function:
-	 * - set wake up timer to ~ 10 minutes
+	 * - set wake up timer to 10 minutes
 	 * - enable wake up timer and its interrupt
 	 */
 	bool InitializeWakeupTimer(void);
@@ -66,7 +66,7 @@ public:
 	 *
 	 * \details Use the following formula to compute required ticks:
 	 *
-	 * Wake up ticks = time[s] * 37000 / 128 / 290 - 1
+	 * Wake up ticks = time[s] - 1
 	 *
 	 * If #wakeUpTics is 0, initialize the wake up reload register with the value defined by #rtcWut.
 	 *
@@ -94,13 +94,10 @@ protected:
 	 * \brief Initialize the RTC prescaler.
 	 *
 	 * \details The prescaler is initialized for a low power consumption.
-	 * The asynchronous prescaler is set to max value, 127, and the synchronous
-	 * prescaler to 289. For 37kHz (the frequency of LSI) the resulting
-	 * frequency is ~ 0,996767 Hz.
+	 * The asynchronous prescaler is set to 124, and the synchronous prescaler to 295.
+	 * For 37 kHz (the frequency of LSI) the resulting frequency is 1 Hz.
 	 *
-	 * Considering that LSI is not very accurate, this should be equally good enough.
-	 *
-	 * See the definition of the function for another set of values.
+	 * See the definition of the function for other values.
 	 */
 	bool InitializePrescaler(void);
 };

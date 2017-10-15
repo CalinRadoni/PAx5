@@ -176,6 +176,14 @@ public:
 	 *
 	 * \details In Standby mode, all I/O pins are high impedance except the reset pin.
 	 * Exiting Standby mode is like a CPU reset.
+	 *
+	 * Usage to wake up after 5 minutes:
+	 * \code{.cpp}
+	 * sRTC.InitializeRTC();
+	 * ...
+	 * if(sRTC.SetWakeupTimer(299))
+	 *     sCPU.EnterStandby();
+	 * \endcode
 	 */
 	void EnterStandby(void);
 

@@ -33,7 +33,7 @@ const uint16_t LogCodeRTC_INITF   = 3;
 const uint32_t rtcTimeout = 3000U;
 
 // see #CPU_RTC.InitializePrescaler for computing this value
-const uint32_t rtcPrescaler = 0x007F0121U;
+const uint32_t rtcPrescaler = 0x007C0127U;
 
 /**
  * RTC wake up auto-reload value.
@@ -43,11 +43,11 @@ const uint32_t rtcPrescaler = 0x007F0121U;
  * From RM0377: When the wake up timer is enabled (WUTE set to 1), the WUTF flag
  * is set every (WUT[15:0] + 1) ck_wut cycles.
  *
- * (597 + 1) cycles at 0,996767 Hz = ~ 599,94 seconds
+ * (599 + 1) cycles at 1 Hz = 600 seconds
  *
  * \warning Only the last 16 bits are used !
  */
-const uint32_t rtcWut = 597U; // ~ 10 minutes
+const uint32_t rtcWut = 599U; // 10 minutes
 
 // -----------------------------------------------------------------------------
 
@@ -280,13 +280,16 @@ void CPU_RTC::HandleInterrupt(void)
  *
  * Assuming RTC_clk = LSI = 37 kHz
  *
- * Case 1: PREDIVA = 127, PREDIVS = 289 -> 0,996767 Hz
- * Case 2: PREDIVA =  73, PREDIVS = 499 -> 1 Hz
+ * Case 1: PREDIVA = 127, PREDIVS = 288 -> 1,00022 Hz    (rtcPrescaler = 0x007F0120U)
+ * Case 2: PREDIVA = 126, PREDIVS = 290 -> 1,00116 Hz    (rtcPrescaler = 0x007E0122U)
+ * Case 3: PREDIVA = 125, PREDIVS = 293 -> 0,99881 Hz    (rtcPrescaler = 0x007D0125U)
+ * Case 4: PREDIVA = 124, PREDIVS = 295 -> 1 Hz          (rtcPrescaler = 0x007C0127U)
  *
  * From RM0377: When both prescalers are used, it is recommended to configure
  * the asynchronous prescaler to a high value to minimize consumption.
  *
  * Case 1 is good enough because LSI is not very precise either.
+ * The benefits of power consumption may be unmeasurable so I have selected case 4
  */
 bool CPU_RTC::InitializePrescaler(void)
 {

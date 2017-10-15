@@ -1070,12 +1070,12 @@ void BoardTester::TestPAWPackets(void)
 void BoardTester::TestWakeupTimer(void)
 {
 	uint32_t tickstart;
-	uint32_t wakeupTicks = 5;
+	uint32_t wakeupTicks = 4;
 	bool res;
 
 	sTextOutput.InitBuffer();
 
-	sTextOutput.FormatAndOutputString("The wake up timer will be initialized for %d seconds for every operation.\r\n", wakeupTicks);
+	sTextOutput.FormatAndOutputString("The wake up timer will be initialized for %d seconds for every operation.\r\n", wakeupTicks + 1);
 
 	sTextOutput.FormatAndOutputString("Wake up timer test ... ");
 	sTextOutput.Flush();
@@ -1101,14 +1101,14 @@ void BoardTester::TestWakeupTimer(void)
 
 	sTextOutput.FormatAndOutputString("__WFI(), voltage regulator in normal mode ... ");
 	sCPU.ConfigureSleep(false);
-	if(sRTC.SetWakeupTimer(7)){
+	if(sRTC.SetWakeupTimer(wakeupTicks)){
 		__WFI();
 		sTextOutput.FormatAndOutputString("done.\r\n");
 	}
 	sTextOutput.Flush();
 	sTextOutput.FormatAndOutputString("__WFI(), voltage regulator in low-power mode ... ");
 	sCPU.ConfigureSleep(true);
-	if(sRTC.SetWakeupTimer(7)){
+	if(sRTC.SetWakeupTimer(wakeupTicks)){
 		__WFI();
 		sTextOutput.FormatAndOutputString("done.\r\n");
 	}
@@ -1118,7 +1118,7 @@ void BoardTester::TestWakeupTimer(void)
 	sTextOutput.Flush();
 	//DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
 	sCPU.WakeupFromStopWithHSI(false);
-	if(sRTC.SetWakeupTimer(7)){
+	if(sRTC.SetWakeupTimer(wakeupTicks)){
 		sCPU.EnterStop();
 		sTextOutput.FormatAndOutputString("done.\r\n");
 	}
@@ -1129,7 +1129,7 @@ void BoardTester::TestWakeupTimer(void)
 	sTextOutput.Flush();
 	//DBGMCU->CR |= DBGMCU_CR_DBG_STOP;
 	sCPU.WakeupFromStopWithHSI(true);
-	if(sRTC.SetWakeupTimer(7)){
+	if(sRTC.SetWakeupTimer(wakeupTicks)){
 		sCPU.EnterStop();
 		sTextOutput.FormatAndOutputString("done.\r\n");
 	}
@@ -1138,7 +1138,7 @@ void BoardTester::TestWakeupTimer(void)
 
 	sTextOutput.FormatAndOutputString("Standby() ...\r\n");
 	sTextOutput.Flush();
-	if(sRTC.SetWakeupTimer(7)){
+	if(sRTC.SetWakeupTimer(wakeupTicks)){
 		// will reset when WUT fires
 		sCPU.EnterStandby();
 	}

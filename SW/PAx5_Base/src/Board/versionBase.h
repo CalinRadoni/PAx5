@@ -26,7 +26,7 @@ namespace PAx5 {
 
 #define Base_SW_VER_MAJOR	0
 #define Base_SW_VER_MINOR	87
-#define Base_SW_VER_BUILD	668
+#define Base_SW_VER_BUILD	672
 
 }
 
