@@ -1,6 +1,13 @@
 
 # PAx5
 
+## Note
+
+This repository is archived because I am building a version with better integration
+in the [pax-devices](https://github.com/CalinRadoni/pax-devices) repository.
+
+## Description
+
 __PAx5__ is a home automation platform designed to be secure, stable and powerful.
 
 __#__ Hardware is centered around an ultra-low-power ARM Cortex-M0+ and a sub-GHz radio.

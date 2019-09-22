@@ -1,5 +1,6 @@
-# ignore .metadata
+# ignore .metadata and workspaces
 .metadata/
+_workspace*/
 
 # ignore KiCad backup files
 *.bak

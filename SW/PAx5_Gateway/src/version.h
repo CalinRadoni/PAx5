@@ -26,8 +26,12 @@ namespace PAx5Gateway {
 
 #define SW_VER_MAJOR	0
 #define SW_VER_MINOR	4
-#define SW_VER_BUILD	65
+#define SW_VER_BUILD	67
 
 }
+
+// TODO Make a single BaseConfig class to also include the version number
+// nu e bine ! sau e ? Dar nu poate fi in PAx5_Base ca nu pot defini const int versionHI pt fiecare proiect
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 #endif

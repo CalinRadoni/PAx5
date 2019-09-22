@@ -1,0 +1,12 @@
+(module PinTest-SMD (layer F.Cu) (tedit 5C327F87)
+  (descr "Single SMD pin")
+  (tags DEV)
+  (attr virtual)
+  (fp_text reference Po1 (at 0 -1.26746) (layer F.Fab)
+    (effects (font (size 0.508 0.508) (thickness 0.127)))
+  )
+  (fp_text value ~ (at 0 1.27) (layer F.Fab) hide
+    (effects (font (size 0.508 0.508) (thickness 0.127)))
+  )
+  (pad 1 smd rect (at 0 0) (size 1 2) (layers F.Cu F.Paste F.Mask))
+)

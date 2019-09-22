@@ -16,17 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <dev_HIHSensor.h>
-#include <NetWorker.h>
 #include "version.h"
 #include "Node_Config.h"
+#include "NetWorker.h"
+
 #include "MainBoard.h"
-#include "dev_LED.h"
 #include "cpu_Entropy.h"
-#include "dev_RFM69.h"
+#include "cpu_I2C.h"
 #include "cpu_Text.h"
 
-#include "cpu_I2C.h"
+#include "dev_LED.h"
+#include "dev_HIHSensor.h"
+#include "dev_RFM69.h"
+
 
 // -----------------------------------------------------------------------------
 

@@ -26,7 +26,7 @@ namespace PAx5Node {
 
 #define SW_VER_MAJOR	0
 #define SW_VER_MINOR	6
-#define SW_VER_BUILD	58
+#define SW_VER_BUILD	60
 
 }
 

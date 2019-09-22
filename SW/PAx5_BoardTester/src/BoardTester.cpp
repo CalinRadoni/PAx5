@@ -63,7 +63,7 @@ void BoardTester::InteractiveTest(void)
 
 	sTextOutput.InitBuffer();
 
-	sTextOutput.FormatAndOutputString("PAx5 Board Test, Firmware %d.%d.%d\r\n", Base_SW_VER_MAJOR, Base_SW_VER_MINOR, Base_SW_VER_BUILD);
+	sTextOutput.FormatAndOutputString("PAx5 Board Test, Firmware %d.%d\r\n", PAx5Base_Version_Major, PAx5Base_Version_Minor);
 	sTextOutput.FormatAndOutputString("Select option:\r\n");
 	sTextOutput.FormatAndOutputString("\t0. Board\r\n");
 	sTextOutput.FormatAndOutputString("\t1. Entropy\r\n");

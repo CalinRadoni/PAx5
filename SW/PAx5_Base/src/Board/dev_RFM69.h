@@ -23,9 +23,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace PAx5 {
 
+/**
+ * \brief The FIFO size is a hardware constraint
+ */
 const uint8_t RFM69_FIFO_Size = 66;
+
+/**
+ * \brief The maximum message length is due to a hardware constraint and the way the radio is used
+ */
 const uint8_t RFM69_MaxMsgLen = 64;
-const uint8_t RFM69_RadioBufferOffset = 2; ///< needed to transfer data through SPI
+
+/**
+ * \brief This is needed when transferring data through SPI and must be 2
+ */
+const uint8_t RFM69_RadioBufferOffset = 2;
 
 static_assert((RFM69_MaxMsgLen + RFM69_RadioBufferOffset) <= RFM69_FIFO_Size, "RFM69_MaxMsgLen must be reduced !");
 
@@ -65,10 +76,14 @@ public:
 	bool            initUseAFC;                     // default: true
 	bool            initFilterAddress;              // default: true
 	bool            initVariableLengthPacketFormat; // default: true
+	/**
+	 * \brief All the public initXXX variables should be set before calling this function
+	 */
 	void Initialize(void);
 
 	/**
 	 * \brief Set the address of this node
+	 *
 	 * \details It also applies:
 	 *    - initVariableLengthPacketFormat
 	 *    - initDCF
@@ -78,17 +93,27 @@ public:
 
 	/**
 	 * \brief Get the version of RFM69 module
-	 * \details bits[7:4] = rev.number
-	 *          bits[3:0] = metal mask rev.no.
+	 *
+	 * \details The module revision is stored in an 8-bit unsigned int like this:
+	 *          - bits[7:4] = rev.number
+	 *          - bits[3:0] = metal mask rev.no.
+	 *
+	 * \return The module revision
 	 */
 	uint8_t GetModuleVersion(void);
 
 	/**
 	 * \brief Test read and write to a sync register
+	 *
 	 * \details Write #val in the sync register number #syncRegNo then
 	 *          read the register and return that value.
-	 * \note This function is used to 'test' reading and writing to
-	 *       radio module's registers.
+	 *          This function is used to 'test' reading and writing to
+	 *          radio module's registers.
+	 *
+	 * \param syncRegNo Is the number of sync register to use. Allowed values are 0 to 3
+	 *        val       The value to be written
+	 *
+	 * \return The value readed from that sync register
 	 */
 	uint8_t TestSyncRegister(uint8_t syncRegNo, uint8_t val); ///< syncRegNo = {0 - 3}
 
@@ -109,29 +134,31 @@ public:
 	void ClearFIFO(void);
 
 	/**
-	 * After a packet is received and copied from FIFO to radioBuffer the mode will be set to RM_StandBy
-	 * if switchRX2RX is true the mode will be set back to RM_RX.
+	 * After a packet is received and copied from FIFO to radioBuffer the radio mode will be set to RM_StandBy
+	 * If switchRX2RX is true the mode will be set back to RM_RX.
 	 * Default value: true
 	 */
 	volatile bool switchRX2RX;
 
-	/** Time interval to wait for channel to be free
+	/**
+	 * \brief Time interval to wait for a channel to be free
 	 *
-	 * If waitTimeForFreeAir > 0, CSMA/CA algorithm is enabled.
-	 * This should not add more then 2ms to send time.
+	 * \details If waitTimeForFreeAir > 0, CSMA/CA algorithm is enabled.
+	 *          This should not add more then 2ms to send time.
 	 *
-	 * During this time interval received data will be lost.
+	 * \note During this time interval received data will be lost.
 	 *
-	 * Default value: 300 ms for a gateway.
+	 * \note Default value: 300 ms for a gateway.
 	 */
 	uint32_t waitTimeForFreeAir;
 
-	/** Wait for channel to be free
+	/**
+	 * \brief Wait for current channel to be free
 	 *
-	 * @attention This function puts the radio in RX mode.
-	 * Before exiting the function will put the radio in Standby mode.
+	 * \attention This function puts the radio in RX mode !
+	 *            Before exiting, the function will put the radio in Standby mode.
 	 *
-	 * @return true if the channel is free
+	 * \return true if the channel is free
 	 */
 	bool WaitForFreeAir(void);
 
@@ -139,9 +166,9 @@ public:
 	 * Send the packet, starting from radioBuffer[RFM69_RadioBufferOffset].
 	 * The parameter is the number of bytes to send.
 	 *
-	 * This function ignores the waitTimeForFreeAir variable.
+	 * \note This function ignores the waitTimeForFreeAir variable.
 	 *
-	 * @return false if number of bytes to be sent is greater then RFM69_MAX_MSG_LEN.
+	 * \return false if number of bytes to be sent is greater then RFM69_MAX_MSG_LEN.
 	 */
 	bool SendMessage(uint8_t);
 
@@ -154,8 +181,8 @@ public:
 	 *
 	 * This function calls the WaitForFreeAir function if waitTimeForFreeAir > 0.
 	 *
-	 * @return false if number of bytes to be sent is greater then RFM69_MAX_MSG_LEN.
-	 * @return false if waitTimeForFreeAir > 0 and the channel is not free in that interval of time.
+	 * \return false if number of bytes to be sent is greater then RFM69_MAX_MSG_LEN.
+	 *         false if waitTimeForFreeAir > 0 and the channel is not free in that interval of time.
 	 */
 	bool SendMessage(uint8_t*, uint8_t);
 
@@ -173,7 +200,7 @@ public:
 
 	void ReadRSSI(void);
 
-	// set in Initialize, FillFIFO, HandleInterrupt,
+	// set in Initialize, FillFIFO, HandleInterrupt, ...
 	volatile bool interfaceError;
 
 	void HandleInterrupt(void);

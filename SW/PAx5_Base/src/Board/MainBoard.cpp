@@ -80,7 +80,7 @@ void BoardDefinion::SetByType(BoardType type)
 	PortC = 0x0000U;
 
 	switch(type){
-	case BoardType::PAx5_CPU:
+	case BoardType::PAx5_BaseBoard_CPU:
 		PowerPeripherals_PA3 = false;
 		PortA = 0x9F0FU; ///< PA0-PA3, PA8-PA11, PA12, PA15
 		PortB = 0x00F8U; ///< PB3, PB4-PB7

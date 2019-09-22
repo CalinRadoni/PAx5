@@ -16,14 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <NetWorker.h>
 #include "version.h"
 #include "GW_Config.h"
+#include "NetWorker.h"
+
 #include "MainBoard.h"
-#include "dev_LED.h"
 #include "cpu_Entropy.h"
-#include "dev_RFM69.h"
 #include "cpu_Text.h"
+
+#include "dev_LED.h"
+#include "dev_RFM69.h"
 
 // -----------------------------------------------------------------------------
 
@@ -36,18 +38,19 @@ PAx5CommProtocol::TimedSlot *nodeTS;
 
 int main(void)
 {
+	// Initialize the board
 	PAx5::BoardDefinion boardDefinition;
 	boardDefinition.SetByType(PAx5::BoardDefinion::BoardType::PAx5_BaseBoard);
-
-	if(PAx5::board.InitializeBoard(boardDefinition) != PAx5::MainBoard::Error::OK){
+	if (PAx5::board.InitializeBoard(boardDefinition) != PAx5::MainBoard::Error::OK) {
 		PAx5::board.BlinkError();
-		while(1){ /* infinite loop */ }
+		while (1) {
+			/* infinite loop */
+		}
 	}
 
-	uint32_t timeS, timeDelta;
 	uint8_t i, rxDataLen;
 
-	timeS = PAx5::sysTickCnt;
+	uint32_t timeS = PAx5::sysTickCnt;
 
 	PAx5::sLED.ModeBlink(300, 300, 3);
 
@@ -55,8 +58,9 @@ int main(void)
 
 	PAx5::sTextOutput.InitBuffer();
 
+	// read current configuration from gateway
 	gatewayConfiguration.ReadConfigInfo();
-	if((gatewayConfiguration.configInfo.verHi == 0) && (gatewayConfiguration.configInfo.verLo == 0)) {
+	if ((gatewayConfiguration.configInfo.verHi == 0) && (gatewayConfiguration.configInfo.verLo == 0)) {
 		// no configuration set in EEPROM, create a default one
 		gateProtocol.commProtocol.SetDefaultKey(&gateProtocol.netCtx);
 		gatewayConfiguration.WriteKey((uint32_t*)&gateProtocol.netCtx.key);
@@ -65,13 +69,14 @@ int main(void)
 
 		PAx5::sTextOutput.FormatAndOutputString("Default configuration created.\r\n");
 	}
-	if((gatewayConfiguration.configInfo.verHi != SW_VER_MAJOR) || (gatewayConfiguration.configInfo.verLo != SW_VER_MINOR)) {
+	if ((gatewayConfiguration.configInfo.verHi != SW_VER_MAJOR) || (gatewayConfiguration.configInfo.verLo != SW_VER_MINOR)) {
 		// current configuration in EEPROM must be updated
 		gatewayConfiguration.configInfo.verHi = SW_VER_MAJOR;
 		gatewayConfiguration.configInfo.verLo = SW_VER_MINOR;
 		gatewayConfiguration.WriteConfigInfo();
 	}
 
+	// I am gateway so my address, at least the public one, should be 1
 	gatewayConfiguration.configInfo.address = 1;
 
 	gateProtocol.Initialize(gatewayConfiguration.configInfo.address, gatewayConfiguration.ReadFrequency());
@@ -97,7 +102,7 @@ int main(void)
 			chkRes = gateProtocol.CheckReceivedPacket();
 			PAx5::sTextOutput.FormatAndOutputString("rx: %d\r\n", (uint8_t)chkRes); PAx5::sTextOutput.Flush();
 			switch(chkRes){
-			case PAx5CommProtocol::NetWorker::RXCheck::PacketOK:
+			  case PAx5CommProtocol::NetWorker::RXCheck::PacketOK:
 				/* Received a data packet
 				 * The communication slot is netWorker.dataPeer
 				 * The data is in netWorker.commProtocol.packetRX[CP_PACKET_HEADER_LEN]
@@ -126,21 +131,21 @@ int main(void)
 				gateProtocol.dataPeer->RestartTimeSlot(0);
 				break;
 
-			case PAx5CommProtocol::NetWorker::RXCheck::ReqAckReceived:
+			  case PAx5CommProtocol::NetWorker::RXCheck::ReqAckReceived:
 				/* REQ+ACK received, start sending data */
 				break;
 
-			case PAx5CommProtocol::NetWorker::RXCheck::AckReceived:
+			  case PAx5CommProtocol::NetWorker::RXCheck::AckReceived:
 				/* ACK received, continue sending data or close the timeslot if done */
 				break;
 
-			case PAx5CommProtocol::NetWorker::RXCheck::AddrRequest:
+			  case PAx5CommProtocol::NetWorker::RXCheck::AddrRequest:
 				break;
 
-			case PAx5CommProtocol::NetWorker::RXCheck::Bcast:
+			  case PAx5CommProtocol::NetWorker::RXCheck::Bcast:
 				break;
 
-			default:
+			  default:
 				break;
 			}
 
@@ -149,7 +154,7 @@ int main(void)
 
 		// decrease time in sLED and communication slots
 		if(timeS != PAx5::sysTickCnt){
-			timeDelta = PAx5::sysTickCnt - timeS;
+			uint32_t timeDelta = PAx5::sysTickCnt - timeS;
 			timeS = PAx5::sysTickCnt;
 
 			PAx5::sLED.Pulse(timeDelta);

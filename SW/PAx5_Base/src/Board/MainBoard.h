@@ -50,10 +50,10 @@ public:
 
 	enum class BoardType : uint8_t
 	{
+		PAx5_BaseBoard_CPU,
 		PAx5_BaseBoard,
 		PAx5_BaseBoardTester,
-		PAx5_EnvSensor,
-		PAx5_CPU
+		PAx5_EnvSensor
 	};
 
 	bool Use_USART;

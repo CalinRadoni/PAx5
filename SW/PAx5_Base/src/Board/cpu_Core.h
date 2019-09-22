@@ -35,7 +35,6 @@ public:
 	 * - SetFrequency
 	 * - NVM_WaitStateRequired
 	 * - AllowedVoltageRange
-	 *
 	 */
 	enum class Frequency : uint8_t {
 		MSI_65k,       //  65.536 kHz, MSI,       VR3, NVM 0 wait-state

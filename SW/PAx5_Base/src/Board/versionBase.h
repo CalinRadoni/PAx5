@@ -19,15 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef VERSIONBASE_H_
 #define VERSIONBASE_H_
 
+#include "defines.h"
+
 namespace PAx5 {
 
-// @warning: namespace is here just as a hint for user
-// the preprocessor knows nothing about namespaces !
-
-#define Base_SW_VER_MAJOR	0
-#define Base_SW_VER_MINOR	87
-#define Base_SW_VER_BUILD	672
+extern const uint8_t PAx5Base_Version_Major;
+extern const uint8_t PAx5Base_Version_Minor;
 
 }
 
-#endif /* VERSION_H_ */
+#endif
